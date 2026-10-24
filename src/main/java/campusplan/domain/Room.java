@@ -1,6 +1,6 @@
 package campusplan.domain;
 
-import campusplan.ValidationException;
+import campusplan.error.ValidationException;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.EnumSet;
