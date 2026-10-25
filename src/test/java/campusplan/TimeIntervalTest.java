@@ -90,5 +90,23 @@ public class TimeIntervalTest {
         assertFalse(t1.touchesOrOverlaps(t2));
     }
 
+    @Test 
+    public void coveredTimeIntervals() {
+
+        /* 25 Oct 2026 8:30AM-5PM */
+        TimeInterval t1 = new TimeInterval(LocalDate.now(),     
+            LocalTime.of(8, 30, 0), 
+            LocalTime.of(17, 0, 0));
+
+        /* 25 Oct 2026 12PM-3:30PM */
+        TimeInterval t2 = new TimeInterval(LocalDate.now(),
+            LocalTime.of(12, 0, 0), 
+            LocalTime.of(15, 30, 0));
+
+        /* t1 covers t2, but t2 does NOT cover t1 */
+        assertTrue(t1.covers(t2));
+        assertFalse(t2.covers(t1));
+    }
+
 
 }

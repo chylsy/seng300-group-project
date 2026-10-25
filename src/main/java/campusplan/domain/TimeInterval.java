@@ -44,12 +44,21 @@ public class TimeInterval {
 
         return this.date.equals(o.date)
             && (this.start.isBefore(o.end) || this.start.equals(o.end))
-            && (o.start.isBefore(this.end) || o.start.equals(this.end));
+            && (o.start.isBefore(this.end) || o.start.equals(this.end))
+        ;
     }
     
+    /**
+     * This method checks if a time interval covers another
+     * @param o - The time interval to check is being covered
+     * @return  - True or False
+     */
     public boolean covers(TimeInterval o) {
 
-        return false;
+        return this.date.equals(o.date)
+            && (this.start.isBefore(o.start) || this.start.equals(o.start))
+            && (o.end.isBefore(this.end) || o.end.equals(this.end))
+        ;
     }
 
     public int minutes() {
