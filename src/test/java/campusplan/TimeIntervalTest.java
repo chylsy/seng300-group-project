@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -108,5 +109,37 @@ public class TimeIntervalTest {
         assertFalse(t2.covers(t1));
     }
 
+    @Test 
+    public void testDurations() {
 
+        /* Case 1: 1 hour interval (8:30AM - 9:30AM) */
+        TimeInterval t1 = new TimeInterval(
+            LocalDate.now(),
+            LocalTime.of(8, 30),
+            LocalTime.of(9, 30)
+        );
+
+        /* 1 hour = 60 minutes */
+        assertEquals(60, t1.minutes());
+
+        /* Case 2: 3.5 hour interval (8:00AM - 11:30 AM) */
+        TimeInterval t2 = new TimeInterval(
+            LocalDate.now(),
+            LocalTime.of(8, 0),
+            LocalTime.of(11, 30)
+        );       
+
+        /* 3.5 hours = 210 minutes */
+        assertEquals(210, t2.minutes());
+
+        /* Case 3: 8.5 hour interval (6:30AM - 3:00PM) */
+        TimeInterval t3 = new TimeInterval(
+            LocalDate.now(),
+            LocalTime.of(6, 30),
+            LocalTime.of(15, 0)
+        );
+
+        /* 8.5 hours = 510 minutes */
+        assertEquals(510, t3.minutes());
+    }
 }

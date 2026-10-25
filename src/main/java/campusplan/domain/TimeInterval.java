@@ -2,6 +2,7 @@ package campusplan.domain;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 
 public class TimeInterval {
 
@@ -61,9 +62,12 @@ public class TimeInterval {
         ;
     }
 
+    /**
+     * This method returns the duration of the time interval in minutes
+     * @return - An integer representing the duration of the time interval
+     */
     public int minutes() {
 
-        return 0;
+        return (int) ChronoUnit.MINUTES.between(this.start, this.end);
     }
-
 }
