@@ -7,7 +7,7 @@ public class StudentAvailability {
 
     private final String studentId;
 
-    private List<TimeInterval> intervals;
+    private final List<TimeInterval> intervals;
 
     public StudentAvailability(String studentId) {
 
@@ -22,55 +22,8 @@ public class StudentAvailability {
      * */
     public void add(TimeInterval i) {
 
-        TimeInterval merged = i;
-
-        /* Check existing intervals for overlaps or adjacency */
-        boolean foundMerge;
-
-        do {
-            foundMerge = false;
-
-            Iterator<TimeInterval> iterator = intervals.iterator();
-
-            while (iterator.hasNext()) {
-                TimeInterval existing = iterator.next();
-
-                if (existing.touchesOrOverlaps(merged)) {
-
-                    /* Find earliest start time */
-                    LocalTime mergedStart;
-
-                    if (existing.getStart().isBefore(merged.getStart())) {
-                        mergedStart = existing.getStart();
-                    } else {
-                        mergedStart = merged.getStart();
-                    }
-
-                    /* Find latest end time */
-                    LocalTime mergedEnd;
-
-                    if (existing.getEnd().isAfter(merged.getEnd())) {
-                        mergedEnd = existing.getEnd();
-                    } else {
-                        mergedEnd = merged.getEnd();
-                    }
-
-                    /* Create combined interval */
-                    merged = new TimeInterval(
-                        merged.getDate(),
-                        mergedStart,
-                        mergedEnd
-                    );
-
-                    iterator.remove();
-                    foundMerge = true;
-                }
-            }
-
-        } while (foundMerge);
-
-        /* Add final merged interval */
-        intervals.add(merged);
+        intervals.add(i);
+        mergeTouchingOrOverlapping();
     }
 
     /**
@@ -125,7 +78,7 @@ public class StudentAvailability {
 
         for (TimeInterval existing : intervals) {
 
-            /* We only need to check wheter at least one interval covers slot */
+            /* We only need to check whether at least one interval covers slot */
             if (existing.covers(slot)) return true;
         }
 
@@ -133,9 +86,65 @@ public class StudentAvailability {
         return false;
     }
 
+    /**
+     * Merges overlapping or adjacent availability intervals
+     */
     private void mergeTouchingOrOverlapping() {
 
+        boolean foundMerge;
 
+        do {
+            foundMerge = false;
+
+            for (int a = 0; a < intervals.size(); a++) {
+                for (int b = a + 1; b < intervals.size(); b++) {
+
+                    TimeInterval first = intervals.get(a);
+                    TimeInterval second = intervals.get(b);
+
+                    /* Check existing intervals for overlaps or adjacency */
+                    if (first.touchesOrOverlaps(second)) {
+
+                        /* Find earliest start time */
+                        LocalTime mergedStart;
+
+                        if (first.getStart().isBefore(second.getStart())) {
+                            mergedStart = first.getStart();
+                        } else {
+                            mergedStart = second.getStart();
+                        }
+
+                        /* Find latest end time */
+                        LocalTime mergedEnd;
+
+                        if (first.getEnd().isAfter(second.getEnd())) {
+                            mergedEnd = first.getEnd();
+                        } else {
+                            mergedEnd = second.getEnd();
+                        }
+
+                        /* Create combined interval */
+                        TimeInterval merged = new TimeInterval(
+                            first.getDate(),
+                            mergedStart,
+                            mergedEnd
+                        );
+
+                        /* Replace the first interval and remove the second  */
+                        intervals.set(a, merged);
+                        intervals.remove(b);
+
+                        foundMerge = true;
+                        break;
+                    }
+                }
+
+                if (foundMerge) {
+                    break;
+                }
+            }
+
+        } while (foundMerge);
     }
 
     /* Accessor (Getter) Methods: */
@@ -149,7 +158,4 @@ public class StudentAvailability {
 
         return Collections.unmodifiableList(intervals);
     }
-
-
-
 }

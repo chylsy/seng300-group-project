@@ -106,4 +106,53 @@ public class StudentAvailabilityTest {
         assertFalse(availability.covers(slot3));
     }
 
+    @Test
+    public void testStudentAvailability() {
+
+        StudentAvailability availability = new StudentAvailability("S001");
+        LocalDate date = LocalDate.of(2026, 10, 26);
+
+        /* Create two separate intervals */
+        availability.add(new TimeInterval(
+            date, LocalTime.of(9, 0), LocalTime.of(11, 0)
+        ));
+
+        availability.add(new TimeInterval(
+            date, LocalTime.of(13, 0), LocalTime.of(15, 0)
+        ));
+
+        assertEquals(2, availability.getIntervals().size());
+
+        /* Add an interval connecting both existing intervals */
+        availability.add(new TimeInterval(
+            date, LocalTime.of(10, 30), LocalTime.of(13, 0)
+        ));
+
+        /* All 3 intervals are then merged into one interval (9:00AM - 3:00PM) */
+        assertEquals(1, availability.getIntervals().size());
+
+        assertTrue(availability.covers(new TimeInterval(
+            date, LocalTime.of(9, 0), LocalTime.of(15, 0)
+        )));
+
+        /* Remove middle portion (11:00AM - 1:00PM) */
+        availability.remove(new TimeInterval(
+            date, LocalTime.of(11, 0), LocalTime.of(13, 0)
+        ));
+
+        assertEquals(2, availability.getIntervals().size());
+
+        /* Check remaining availability */
+        assertTrue(availability.covers(new TimeInterval(
+            date, LocalTime.of(9, 0), LocalTime.of(11, 0)
+        )));
+
+        assertTrue(availability.covers(new TimeInterval(
+            date, LocalTime.of(13, 0), LocalTime.of(15, 0)
+        )));
+
+        assertFalse(availability.covers(new TimeInterval(
+            date, LocalTime.of(11, 0), LocalTime.of(13, 0)
+        )));
+    }
 }
