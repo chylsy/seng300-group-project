@@ -5,6 +5,8 @@ import java.time.LocalTime;
 
 import org.junit.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import campusplan.domain.StudentAvailability;
 import campusplan.domain.TimeInterval;
@@ -74,5 +76,34 @@ public class StudentAvailabilityTest {
         assertEquals(LocalTime.of(15, 0), second.getEnd());
     }
 
+    @Test
+    public void testCovers() {
+
+        StudentAvailability availability = new StudentAvailability("S001");
+        LocalDate date = LocalDate.of(2026, 10, 26);
+
+        /* Student is available from 9:00AM - 12:00PM */
+        availability.add(new TimeInterval(
+            date, LocalTime.of(9, 0), LocalTime.of(12, 0)
+        ));
+
+        /* Case 1: Slot is fully covered (TRUE) */
+        TimeInterval slot1 = new TimeInterval(
+            date, LocalTime.of(10, 0), LocalTime.of(11, 0)
+        );
+        assertTrue(availability.covers(slot1));
+
+        /* Case 2: Slot is partially covered (FALSE) */
+        TimeInterval slot2 = new TimeInterval(
+            date, LocalTime.of(11, 0), LocalTime.of(13, 0)
+        );
+        assertFalse(availability.covers(slot2));
+
+        /* Case 3: Slot is completely uncovered (FALSE) */
+        TimeInterval slot3 = new TimeInterval(
+            date, LocalTime.of(14, 0), LocalTime.of(15, 0)
+        );
+        assertFalse(availability.covers(slot3));
+    }
 
 }

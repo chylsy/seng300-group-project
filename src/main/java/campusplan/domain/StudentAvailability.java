@@ -77,7 +77,7 @@ public class StudentAvailability {
      * Removes a time interval from the student's availability and preserves 
      * any portions of existing intervals that fall outside the removed interval
      * @param i - Time interval to remove
-     */
+     * */
     public void remove(TimeInterval i) {
 
         List<TimeInterval> remaining = new ArrayList<>();
@@ -116,8 +116,20 @@ public class StudentAvailability {
         intervals.addAll(remaining);
     }
 
+    /**
+     * Checks whether any of the student's time intervals fully covers the requested time slot
+     * @param slot - Time slot (interval) to check
+     * @return     - True or False
+     * */
     public boolean covers(TimeInterval slot) {
 
+        for (TimeInterval existing : intervals) {
+
+            /* We only need to check wheter at least one interval covers slot */
+            if (existing.covers(slot)) return true;
+        }
+
+        /* No time interval covers slot */
         return false;
     }
 
