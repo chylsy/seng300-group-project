@@ -129,8 +129,7 @@ public class StudentService {
         /*if two students have the same name, the one with smaller id comes first */
         list.sort((a, b) -> compareByNameThenId(a, b));
     }
-    
-    /*decide which student comes first. return a negative num if student a comes first, positive if student b comes first, 0 if same */
+    /*decides which student comes first. return a negative num if student a comes first, positive if student b comes first, 0 if same */
     private int compareByNameThenId(Student a, Student b) {
         int nameResult = a.getName().compareToIgnoreCase(b.getName());
         if (nameResult != 0) {
