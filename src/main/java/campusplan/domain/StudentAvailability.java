@@ -15,6 +15,11 @@ public class StudentAvailability {
         this.intervals = new ArrayList<>();
     }
 
+    /**
+     * Adds a time interval to the student's availability and merges overlapping or
+     * adjacent intervals into a single interval
+     * @param i - Time interval to add
+     * */
     public void add(TimeInterval i) {
 
         TimeInterval merged = i;
@@ -68,9 +73,47 @@ public class StudentAvailability {
         intervals.add(merged);
     }
 
+    /**
+     * Removes a time interval from the student's availability and preserves 
+     * any portions of existing intervals that fall outside the removed interval
+     * @param i - Time interval to remove
+     */
     public void remove(TimeInterval i) {
 
+        List<TimeInterval> remaining = new ArrayList<>();
 
+        for (TimeInterval existing : intervals) {
+
+            /* No overlap so we keep the existing interval */
+            if (!existing.overlaps(i)) {
+                remaining.add(existing);
+                continue;
+            }
+
+            /* Keep any portion before the removed interval */
+            if (existing.getStart().isBefore(i.getStart())) {
+
+                remaining.add(new TimeInterval(
+                    existing.getDate(),
+                    existing.getStart(),
+                    i.getStart()
+                ));
+            }
+
+            /* Keep any portion after the removed interval */
+            if (existing.getEnd().isAfter(i.getEnd())) {
+
+                remaining.add(new TimeInterval(
+                    existing.getDate(),
+                    i.getEnd(),
+                    existing.getEnd()
+                ));
+            }
+        }
+
+        /* Replace old intervals with remaining ones */
+        intervals.clear();
+        intervals.addAll(remaining);
     }
 
     public boolean covers(TimeInterval slot) {

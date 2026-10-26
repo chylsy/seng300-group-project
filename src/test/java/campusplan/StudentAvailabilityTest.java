@@ -42,6 +42,37 @@ public class StudentAvailabilityTest {
         assertEquals(LocalTime.of(15, 0), result.getEnd());
     }
 
+    @Test
+    public void splitsIntervalOnRemoval() {
+
+        StudentAvailability availability = new StudentAvailability("S001");
+
+        LocalDate date = LocalDate.of(2026, 10, 25);
+
+        /* 9:00AM - 3:00PM */
+        availability.add(new TimeInterval(
+            date, LocalTime.of(9, 0), LocalTime.of(15, 0)
+        ));
+
+        /* Remove the time interval from 11:00AM - 1:00PM */
+        availability.remove(new TimeInterval(
+            date, LocalTime.of(11, 0), LocalTime.of(13, 0)
+        ));
+
+        /* Removing that time interval should split the origihnal interval in two */
+        assertEquals(2, availability.getIntervals().size());
+
+        TimeInterval first = availability.getIntervals().get(0);
+        TimeInterval second = availability.getIntervals().get(1);
+
+        /* First interval from 9:00AM - 11:00AM */
+        assertEquals(LocalTime.of(9, 0), first.getStart());
+        assertEquals(LocalTime.of(11, 0), first.getEnd());
+
+        /* Second interval from 1:00PM - 3:00PM */
+        assertEquals(LocalTime.of(13, 0), second.getStart());
+        assertEquals(LocalTime.of(15, 0), second.getEnd());
+    }
 
 
 }
