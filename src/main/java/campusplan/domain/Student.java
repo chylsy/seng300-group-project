@@ -1,7 +1,7 @@
 package campusplan.domain;
 
 import java.util.Objects;
-import java.util.locale;
+import java.util.Locale;
 
 
  /*
