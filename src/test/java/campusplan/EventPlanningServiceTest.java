@@ -37,7 +37,7 @@ class EventPlanningServiceTest {
     private static CampusPlanData dataWithStudents(int n) {
         CampusPlanData data = new CampusPlanData();
         for (String id : ids(n)) {
-            data.getStudents().put(id, new Student(id, "Student " + id));
+            data.getStudents().put(id, new Student(id, id, id + "@ucalgary.ca"));
         }
         return data;
     }
@@ -62,7 +62,10 @@ class EventPlanningServiceTest {
         assertEquals("Study night", event.getTitle());
         assertEquals(EventStatus.DRAFT, event.getStatus());
         assertEquals(ids(3), event.getInviteeIds());
-        assertTrue(event.getResponses().isEmpty());
+        assertEquals(3, event.getResponses().size());
+        for (String studentId : ids(3)) {
+            assertEquals(Event.PENDING, event.getResponses().get(studentId));
+        }
         assertNull(event.getRoomId());
         assertNull(event.getSlot());
     }
@@ -252,5 +255,39 @@ class EventPlanningServiceTest {
         assertEquals("EV-002", all.get(1).getId());
         all.clear();
         assertEquals(2, service.listAll().size());
+    }
+
+    @Test
+    void newIdNeverOverwritesAnExistingEvent() {
+        CampusPlanData data = dataWithStudents(3);
+        data.getEvents().put("EV-002", new Event("EV-002", valid()));
+        EventPlanningService service = new EventPlanningService(data);
+        Event created = service.createDraft(req("Another", ids(3), START, START.plusDays(2), 60, 2));
+        assertNotEquals("EV-002", created.getId());
+        assertEquals(2, data.getEvents().size());
+        assertEquals("Study night", data.getEvents().get("EV-002").getTitle());
+    }
+
+    @Test
+    void editingInviteesDropsRemovedResponsesAndStartsNewOnesPending() {
+        EventPlanningService service = new EventPlanningService(dataWithStudents(4));
+        Event created = service.createDraft(req("Study night", List.of("s1", "s2", "s3"), START, START.plusDays(2), 60, 2));
+        created.getResponses().put("s2", "ACCEPTED");
+        Event edited = service.editDraft(created.getId(),
+                req("Study night", List.of("s2", "s3", "s4"), START, START.plusDays(2), 60, 2));
+        assertEquals(Set.of("s2", "s3", "s4"), edited.getResponses().keySet());
+        assertEquals("ACCEPTED", edited.getResponses().get("s2"));
+        assertEquals(Event.PENDING, edited.getResponses().get("s4"));
+    }
+
+    @Test
+    void copyOfAnEventIsIndependentOfTheOriginal() {
+        Event original = new Event("EV-001", valid());
+        Event copy = new Event(original);
+        copy.getResponses().put("s1", "ACCEPTED");
+        assertEquals(Event.PENDING, original.getResponses().get("s1"));
+        assertEquals(original.getId(), copy.getId());
+        assertEquals(original.getTitle(), copy.getTitle());
+        assertEquals(original.getInviteeIds(), copy.getInviteeIds());
     }
 }

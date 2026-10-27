@@ -49,7 +49,7 @@ public class EventPlanningService {
     public Event get(String id) {
         Event event = data.getEvents().get(id);
         if (event == null) {
-            throw new NotFoundException("Event not found: " + id);
+            throw new NotFoundException("Event", id);
         }
         return event;
     }
@@ -61,9 +61,15 @@ public class EventPlanningService {
         return events;
     }
 
-    //events are never deleted, so count + 1 is always unused
+    //first unused id; skips ids already taken, such as ones loaded from saved data
     private String nextId() {
-        return String.format("EV-%03d", data.getEvents().size() + 1);
+        int number = data.getEvents().size() + 1;
+        String id = String.format("EV-%03d", number);
+        while (data.getEvents().containsKey(id)) {
+            number++;
+            id = String.format("EV-%03d", number);
+        }
+        return id;
     }
 
     //checks rules E1-E7 without changing anything
@@ -104,7 +110,7 @@ public class EventPlanningService {
         //E7 every invitee exists
         for (String studentId : ids) {
             if (!data.getStudents().containsKey(studentId)) {
-                throw new NotFoundException("Student not found: " + studentId);
+                throw new NotFoundException("Student" + studentId);
             }
         }
     }
