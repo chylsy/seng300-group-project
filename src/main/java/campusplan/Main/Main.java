@@ -1,8 +1,15 @@
 package campusplan.Main;
 
 import java.util.Scanner;
+import java.util.List;
+import java.util.Set;
+import java.util.EnumSet;
+
 import campusplan.service.StudentService;
+import campusplan.service.RoomCatalogService;
 import campusplan.domain.Student;
+import campusplan.domain.Room;
+import campusplan.domain.RoomFeature;
 import campusplan.domain.CampusPlanData;
 import campusplan.domain.IdGenerator;
 import campusplan.error.DuplicateEmailException;
@@ -11,10 +18,12 @@ import campusplan.error.NotFoundException;
 public class Main {
     private final Scanner scanner;
     private final StudentService studentService;
+    private final RoomCatalogService roomCatalogService;
 
     public Main(CampusPlanData data, IdGenerator ids) {
         scanner = new Scanner(System.in);
         studentService = new StudentService(data, ids);
+        roomCatalogService = new RoomCatalogService(data);
     }
 
     public void run() {
@@ -111,6 +120,7 @@ public class Main {
             String email = scanner.nextLine();
 
             Student student = studentService.create(name, email);
+
             System.out.println("Student created successfully:");
             System.out.println(student);
         } catch (DuplicateEmailException | IllegalArgumentException e) {
@@ -119,9 +129,16 @@ public class Main {
     }
 
     private void viewStudents() {
+        List<Student> students = studentService.listAll();
+
         System.out.println("\n=== All Students ===");
 
-        for (Student student : studentService.listAll()) {
+        if (students.isEmpty()) {
+            System.out.println("No students found.");
+            return;
+        }
+
+        for (Student student : students) {
             System.out.println(student);
         }
     }
@@ -130,9 +147,16 @@ public class Main {
         System.out.print("Enter a name or email to search: ");
         String text = scanner.nextLine();
 
+        List<Student> students = studentService.search(text);
+
         System.out.println("\n=== Search Results ===");
 
-        for (Student student : studentService.search(text)) {
+        if (students.isEmpty()) {
+            System.out.println("No matching students found.");
+            return;
+        }
+
+        for (Student student : students) {
             System.out.println(student);
         }
     }
@@ -149,6 +173,7 @@ public class Main {
             String email = scanner.nextLine();
 
             Student student = studentService.edit(id, name, email);
+
             System.out.println("Student updated successfully:");
             System.out.println(student);
         } catch (DuplicateEmailException | NotFoundException | IllegalArgumentException e) {
@@ -164,13 +189,99 @@ public class Main {
             Student student = studentService.get(id);
             System.out.println(student);
         } catch (NotFoundException e) {
-            System.out.println(e.getMessage());
+            System.out.println("Could not find student: " + e.getMessage());
         }
     }
 
     private void viewRooms() {
-        System.out.println("Room catalogue");
-        // TODO: Display rooms supplied by the application.
+        boolean viewing = true;
+
+        while (viewing) {
+            System.out.println("\n=== Room Catalogue ===");
+            System.out.println("1. View all rooms");
+            System.out.println("2. Filter rooms by minimum capacity");
+            System.out.println("3. Filter rooms by capacity and features");
+            System.out.println("0. Back to main menu");
+            System.out.print("Select an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    displayRooms(roomCatalogService.listAll());
+                    break;
+                case "2":
+                    filterRoomsByCapacity();
+                    break;
+                case "3":
+                    filterRoomsByCapacityAndFeatures();
+                    break;
+                case "0":
+                    viewing = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Try again.");
+            }
+        }
+    }
+
+    private void filterRoomsByCapacity() {
+        try {
+            System.out.print("Enter minimum capacity: ");
+            int minCapacity = Integer.parseInt(scanner.nextLine().trim());
+
+            displayRooms(roomCatalogService.filter(minCapacity, Set.of()));
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid whole number.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid capacity: " + e.getMessage());
+        }
+    }
+
+    private void filterRoomsByCapacityAndFeatures() {
+        try {
+            System.out.print("Enter minimum capacity: ");
+            int minCapacity = Integer.parseInt(scanner.nextLine().trim());
+
+            System.out.println("\nAvailable room features:");
+            for (RoomFeature feature : RoomFeature.values()) {
+                System.out.println("- " + feature);
+            }
+
+            System.out.println("Enter required features separated by commas.");
+            System.out.println("Leave blank for no feature filter.");
+            System.out.print("Features: ");
+
+            String input = scanner.nextLine().trim();
+            Set<RoomFeature> requiredFeatures = EnumSet.noneOf(RoomFeature.class);
+
+            if (!input.isEmpty()) {
+                for (String featureName : input.split(",")) {
+                    requiredFeatures.add(
+                            RoomFeature.valueOf(featureName.trim().toUpperCase())
+                    );
+                }
+            }
+
+            displayRooms(roomCatalogService.filter(minCapacity, requiredFeatures));
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid whole number for capacity.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid input: " + e.getMessage());
+        }
+    }
+
+    private void displayRooms(List<Room> rooms) {
+        System.out.println("\n=== Rooms ===");
+
+        if (rooms.isEmpty()) {
+            System.out.println("No rooms found matching your criteria.");
+            return;
+        }
+
+        for (Room room : rooms) {
+            System.out.println(room);
+        }
     }
 
     private void manageAvailability() {
