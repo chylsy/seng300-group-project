@@ -4,6 +4,8 @@ import campusplan.domain.CampusPlanData;
 import campusplan.domain.Event;
 import campusplan.domain.EventDraftRequest;
 import campusplan.domain.EventStatus;
+import campusplan.domain.IdGenerator;
+import campusplan.domain.UuidIdGenerator;
 import campusplan.error.NotFoundException;
 import campusplan.error.ValidationException;
 import java.time.temporal.ChronoUnit;
@@ -20,15 +22,23 @@ import java.util.Objects;
 public class EventPlanningService {
     private static final Comparator<Event> BY_ID = Comparator.comparing(Event::getId);
     private final CampusPlanData data;
+    private final IdGenerator idGenerator;
 
+    //normal use: ids come from the team's UUID generator
     public EventPlanningService(CampusPlanData data) {
+        this(data, new UuidIdGenerator());
+    }
+
+    //tests can pass a fake generator to get predictable ids
+    public EventPlanningService(CampusPlanData data, IdGenerator idGenerator) {
         this.data = Objects.requireNonNull(data, "data");
+        this.idGenerator = Objects.requireNonNull(idGenerator, "idGenerator");
     }
 
     //makes a new DRAFT event, or throws if any rule E1-E7 fails
     public Event createDraft(EventDraftRequest request) {
         validate(request);              //check everything first
-        String id = nextId();
+        String id = idGenerator.next("event");
         Event event = new Event(id, request);
         data.getEvents().put(id, event); //change data last
         return event;
@@ -59,17 +69,6 @@ public class EventPlanningService {
         List<Event> events = new ArrayList<>(data.getEvents().values());
         events.sort(BY_ID);
         return events;
-    }
-
-    //first unused id; skips ids already taken, such as ones loaded from saved data
-    private String nextId() {
-        int number = data.getEvents().size() + 1;
-        String id = String.format("EV-%03d", number);
-        while (data.getEvents().containsKey(id)) {
-            number++;
-            id = String.format("EV-%03d", number);
-        }
-        return id;
     }
 
     //checks rules E1-E7 without changing anything
@@ -110,7 +109,7 @@ public class EventPlanningService {
         //E7 every invitee exists
         for (String studentId : ids) {
             if (!data.getStudents().containsKey(studentId)) {
-                throw new NotFoundException("Student" + studentId);
+                throw new NotFoundException("Student", studentId);
             }
         }
     }
