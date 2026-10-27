@@ -40,7 +40,18 @@ public class Main {
         availabilityService = new AvailabilityService(data);
         eventPlanningService = new EventPlanningService(data);
     }
+    public static void main(String[] args) {
+        CampusPlanData data = new CampusPlanData();
+        IdGenerator ids = new IdGenerator() {
+            @Override
+            public String next(String prefix) {
+                return "";
+            }
+        };
 
+        Main app = new Main(data, ids);
+        app.run();
+    }
     public void run() {
         boolean running = true;
 
@@ -636,3 +647,4 @@ public class Main {
 //        // TODO: Connect to the application's storage operation.
 //    }
 }
+
