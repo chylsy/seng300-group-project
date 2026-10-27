@@ -70,4 +70,21 @@ public class TimeInterval {
 
         return (int) ChronoUnit.MINUTES.between(this.start, this.end);
     }
+
+    /* Accessor (Getter) Methods */
+
+    public LocalDate getDate() {
+
+        return date;
+    }
+
+    public LocalTime getStart() {
+
+        return start;
+    }
+
+    public LocalTime getEnd() {
+        
+        return end;
+    }
 }

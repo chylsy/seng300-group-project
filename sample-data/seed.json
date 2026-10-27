@@ -1,0 +1,661 @@
+{
+  "schemaVersion": 1,
+  "students": [
+    {
+      "id": "S001",
+      "name": "Avery Chen",
+      "email": "student01@example.test"
+    },
+    {
+      "id": "S002",
+      "name": "Jordan Patel",
+      "email": "student02@example.test"
+    },
+    {
+      "id": "S003",
+      "name": "Morgan Reed",
+      "email": "student03@example.test"
+    },
+    {
+      "id": "S004",
+      "name": "Taylor Okafor",
+      "email": "student04@example.test"
+    },
+    {
+      "id": "S005",
+      "name": "Casey Nguyen",
+      "email": "student05@example.test"
+    },
+    {
+      "id": "S006",
+      "name": "Riley Brooks",
+      "email": "student06@example.test"
+    },
+    {
+      "id": "S007",
+      "name": "Sam Rivera",
+      "email": "student07@example.test"
+    },
+    {
+      "id": "S008",
+      "name": "Alex Kim",
+      "email": "student08@example.test"
+    },
+    {
+      "id": "S009",
+      "name": "Jamie Ellis",
+      "email": "student09@example.test"
+    },
+    {
+      "id": "S010",
+      "name": "Drew Singh",
+      "email": "student10@example.test"
+    },
+    {
+      "id": "S011",
+      "name": "Quinn Lewis",
+      "email": "student11@example.test"
+    },
+    {
+      "id": "S012",
+      "name": "Skyler Park",
+      "email": "student12@example.test"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "R001",
+      "name": "Cedar Study Room",
+      "capacity": 4,
+      "features": [
+        "WHITEBOARD"
+      ]
+    },
+    {
+      "id": "R002",
+      "name": "Maple Meeting Room",
+      "capacity": 6,
+      "features": [
+        "WHITEBOARD",
+        "ACCESSIBLE"
+      ]
+    },
+    {
+      "id": "R003",
+      "name": "Birch Media Room",
+      "capacity": 8,
+      "features": [
+        "PROJECTOR"
+      ]
+    },
+    {
+      "id": "R004",
+      "name": "Aspen Workshop Room",
+      "capacity": 12,
+      "features": [
+        "WHITEBOARD",
+        "PROJECTOR",
+        "ACCESSIBLE"
+      ]
+    },
+    {
+      "id": "R005",
+      "name": "Pine Quiet Room",
+      "capacity": 2,
+      "features": []
+    },
+    {
+      "id": "R006",
+      "name": "Willow Club Room",
+      "capacity": 20,
+      "features": [
+        "PROJECTOR",
+        "ACCESSIBLE"
+      ]
+    }
+  ],
+  "availability": [
+    {
+      "studentId": "S001",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "10:00",
+          "end": "16:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S002",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "10:00",
+          "end": "16:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S003",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "10:00",
+          "end": "16:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S004",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "10:00",
+          "end": "16:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S005",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "10:00",
+          "end": "16:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "09:30",
+          "end": "15:30"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "10:00",
+          "end": "16:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S006",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "17:00",
+          "end": "18:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "17:00",
+          "end": "18:00"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "17:00",
+          "end": "18:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "17:00",
+          "end": "18:00"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "17:00",
+          "end": "18:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "17:00",
+          "end": "18:00"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "17:00",
+          "end": "18:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S007",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "09:00",
+          "end": "11:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S008",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "09:00",
+          "end": "11:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S009",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "09:00",
+          "end": "11:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S010",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "09:00",
+          "end": "11:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S011",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "09:00",
+          "end": "11:00"
+        }
+      ]
+    },
+    {
+      "studentId": "S012",
+      "intervals": [
+        {
+          "date": "2026-11-02",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-03",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-04",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-05",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-06",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "date": "2026-11-07",
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "date": "2026-11-08",
+          "start": "09:00",
+          "end": "11:00"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "EV-001",
+      "title": "Project planning",
+      "inviteeIds": [
+        "S001",
+        "S002",
+        "S003",
+        "S004",
+        "S005",
+        "S006"
+      ],
+      "windowStart": "2026-11-02",
+      "windowEnd": "2026-11-08",
+      "durationMinutes": 120,
+      "requiredFeatures": [
+        "WHITEBOARD"
+      ],
+      "minAttendance": 4,
+      "status": "DRAFT"
+    },
+    {
+      "id": "EV-002",
+      "title": "Full group study",
+      "inviteeIds": [
+        "S001",
+        "S002",
+        "S003",
+        "S004",
+        "S005",
+        "S006"
+      ],
+      "windowStart": "2026-11-02",
+      "windowEnd": "2026-11-08",
+      "durationMinutes": 120,
+      "requiredFeatures": [
+        "WHITEBOARD"
+      ],
+      "minAttendance": 6,
+      "status": "DRAFT"
+    },
+    {
+      "id": "EV-003",
+      "title": "Club workshop",
+      "inviteeIds": [
+        "S007",
+        "S008",
+        "S009",
+        "S010",
+        "S011",
+        "S012"
+      ],
+      "windowStart": "2026-11-02",
+      "windowEnd": "2026-11-08",
+      "durationMinutes": 60,
+      "requiredFeatures": [
+        "PROJECTOR"
+      ],
+      "minAttendance": 3,
+      "status": "DRAFT"
+    }
+  ]
+}
