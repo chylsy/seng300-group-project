@@ -63,9 +63,9 @@ public class Main {
                 case "4":
                     manageDraftEvents();
                     break;
-                case "5":
-                    saveData();
-                    break;
+//                case "5":
+//                    saveData();
+//                    break;
                 case "0":
                     running = false;
                     System.out.println("Exiting CampusPlan.");
@@ -631,8 +631,8 @@ public class Main {
 
     // ==================== SAVE ====================
 
-    private void saveData() {
-        System.out.println("Save data");
-        // TODO: Connect to the application's storage operation.
-    }
+//    private void saveData() {
+//        System.out.println("Save data");
+//        // TODO: Connect to the application's storage operation.
+//    }
 }
