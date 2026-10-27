@@ -52,7 +52,7 @@ public class Student {
     }
     /*normalize email for duplicate checking*/
     public String emailKey(){
-        return email.trim().toLowerCase(locale.ROOT);
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     @Override 
