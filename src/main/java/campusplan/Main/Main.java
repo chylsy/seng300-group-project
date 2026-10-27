@@ -4,14 +4,21 @@ import java.util.Scanner;
 import java.util.List;
 import java.util.Set;
 import java.util.EnumSet;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 
 import campusplan.service.StudentService;
 import campusplan.service.RoomCatalogService;
+import campusplan.service.AvailabilityService;
+
 import campusplan.domain.Student;
 import campusplan.domain.Room;
 import campusplan.domain.RoomFeature;
 import campusplan.domain.CampusPlanData;
 import campusplan.domain.IdGenerator;
+import campusplan.domain.TimeInterval;
+
 import campusplan.error.DuplicateEmailException;
 import campusplan.error.NotFoundException;
 
@@ -19,11 +26,13 @@ public class Main {
     private final Scanner scanner;
     private final StudentService studentService;
     private final RoomCatalogService roomCatalogService;
+    private final AvailabilityService availabilityService;
 
     public Main(CampusPlanData data, IdGenerator ids) {
         scanner = new Scanner(System.in);
         studentService = new StudentService(data, ids);
         roomCatalogService = new RoomCatalogService(data);
+        availabilityService = new AvailabilityService(data);
     }
 
     public void run() {
@@ -70,6 +79,8 @@ public class Main {
         System.out.println("5. Save data");
         System.out.println("0. Exit");
     }
+
+    // ==================== STUDENTS ====================
 
     private void manageStudents() {
         boolean managing = true;
@@ -193,6 +204,8 @@ public class Main {
         }
     }
 
+    // ==================== ROOMS ====================
+
     private void viewRooms() {
         boolean viewing = true;
 
@@ -284,18 +297,126 @@ public class Main {
         }
     }
 
+    // ==================== AVAILABILITY ====================
+
     private void manageAvailability() {
-        System.out.println("Manage availability");
-        // TODO: Collect availability and call the relevant service.
+        boolean managing = true;
+
+        while (managing) {
+            System.out.println("\n=== Manage Availability ===");
+            System.out.println("1. Add availability");
+            System.out.println("2. Remove availability");
+            System.out.println("3. Check availability for a time interval");
+            System.out.println("0. Back to main menu");
+            System.out.print("Select an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    addAvailability();
+                    break;
+                case "2":
+                    removeAvailability();
+                    break;
+                case "3":
+                    checkAvailability();
+                    break;
+                case "0":
+                    managing = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Try again.");
+            }
+        }
+    }
+
+    private void addAvailability() {
+        try {
+            System.out.print("Enter student ID: ");
+            String studentId = scanner.nextLine().trim();
+
+            studentService.get(studentId);
+            TimeInterval interval = readTimeInterval();
+
+            availabilityService.addAvailability(studentId, interval);
+
+            System.out.println("Availability added successfully.");
+        } catch (IllegalArgumentException | NotFoundException e) {
+            System.out.println("Could not add availability: " + e.getMessage());
+        }
+    }
+
+    private void removeAvailability() {
+        try {
+            System.out.print("Enter student ID: ");
+            String studentId = scanner.nextLine().trim();
+
+            studentService.get(studentId);
+            TimeInterval interval = readTimeInterval();
+
+            availabilityService.removeAvailability(studentId, interval);
+
+            System.out.println("Availability removed successfully.");
+        } catch (IllegalArgumentException | NotFoundException e) {
+            System.out.println("Could not remove availability: " + e.getMessage());
+        }
+    }
+
+    private void checkAvailability() {
+        try {
+            System.out.print("Enter student ID: ");
+            String studentId = scanner.nextLine().trim();
+
+            studentService.get(studentId);
+            TimeInterval interval = readTimeInterval();
+
+            boolean available =
+                    availabilityService.isAvailable(studentId, interval);
+
+            if (available) {
+                System.out.println("The student is available for this interval.");
+            } else {
+                System.out.println("The student is not available for this interval.");
+            }
+        } catch (IllegalArgumentException | NotFoundException e) {
+            System.out.println("Could not check availability: " + e.getMessage());
+        }
+    }
+
+    private TimeInterval readTimeInterval() {
+        try {
+            System.out.print("Enter date (YYYY-MM-DD): ");
+            LocalDate date = LocalDate.parse(scanner.nextLine().trim());
+
+            System.out.print("Enter start time (HH:MM): ");
+            LocalTime start = LocalTime.parse(scanner.nextLine().trim());
+
+            System.out.print("Enter end time (HH:MM): ");
+            LocalTime end = LocalTime.parse(scanner.nextLine().trim());
+
+            if (!end.isAfter(start)) {
+                throw new IllegalArgumentException(
+                        "End time must be after start time."
+                );
+            }
+
+            return new TimeInterval(date, start, end);
+
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(
+                    "Invalid date or time. Use YYYY-MM-DD for the date and HH:MM for times."
+            );
+        }
     }
 
     private void manageDraftEvents() {
         System.out.println("Manage draft events");
-        // TODO: Collect event details and call the relevant service.
+        // TODO: Connect to the relevant event service.
     }
 
     private void saveData() {
         System.out.println("Save data");
-        // TODO: Call the application's storage operation.
+        // TODO: Connect to the application's storage operation.
     }
 }
