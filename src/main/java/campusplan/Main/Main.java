@@ -4,6 +4,7 @@ import java.util.Scanner;
 import java.util.List;
 import java.util.Set;
 import java.util.EnumSet;
+import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
@@ -11,6 +12,7 @@ import java.time.format.DateTimeParseException;
 import campusplan.service.StudentService;
 import campusplan.service.RoomCatalogService;
 import campusplan.service.AvailabilityService;
+import campusplan.service.EventPlanningService;
 
 import campusplan.domain.Student;
 import campusplan.domain.Room;
@@ -18,6 +20,8 @@ import campusplan.domain.RoomFeature;
 import campusplan.domain.CampusPlanData;
 import campusplan.domain.IdGenerator;
 import campusplan.domain.TimeInterval;
+import campusplan.domain.Event;
+import campusplan.domain.EventDraftRequest;
 
 import campusplan.error.DuplicateEmailException;
 import campusplan.error.NotFoundException;
@@ -27,12 +31,14 @@ public class Main {
     private final StudentService studentService;
     private final RoomCatalogService roomCatalogService;
     private final AvailabilityService availabilityService;
+    private final EventPlanningService eventPlanningService;
 
     public Main(CampusPlanData data, IdGenerator ids) {
         scanner = new Scanner(System.in);
         studentService = new StudentService(data, ids);
         roomCatalogService = new RoomCatalogService(data);
         availabilityService = new AvailabilityService(data);
+        eventPlanningService = new EventPlanningService(data);
     }
 
     public void run() {
@@ -265,23 +271,31 @@ public class Main {
             System.out.println("Leave blank for no feature filter.");
             System.out.print("Features: ");
 
-            String input = scanner.nextLine().trim();
-            Set<RoomFeature> requiredFeatures = EnumSet.noneOf(RoomFeature.class);
+            Set<RoomFeature> requiredFeatures =
+                    readRoomFeatures(scanner.nextLine().trim());
 
-            if (!input.isEmpty()) {
-                for (String featureName : input.split(",")) {
-                    requiredFeatures.add(
-                            RoomFeature.valueOf(featureName.trim().toUpperCase())
-                    );
-                }
-            }
-
-            displayRooms(roomCatalogService.filter(minCapacity, requiredFeatures));
+            displayRooms(
+                    roomCatalogService.filter(minCapacity, requiredFeatures)
+            );
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid whole number for capacity.");
         } catch (IllegalArgumentException e) {
             System.out.println("Invalid input: " + e.getMessage());
         }
+    }
+
+    private Set<RoomFeature> readRoomFeatures(String input) {
+        Set<RoomFeature> features = EnumSet.noneOf(RoomFeature.class);
+
+        if (!input.isBlank()) {
+            for (String featureName : input.split(",")) {
+                features.add(
+                        RoomFeature.valueOf(featureName.trim().toUpperCase())
+                );
+            }
+        }
+
+        return features;
     }
 
     private void displayRooms(List<Room> rooms) {
@@ -410,10 +424,212 @@ public class Main {
         }
     }
 
+    // ==================== DRAFT EVENTS ====================
+
     private void manageDraftEvents() {
-        System.out.println("Manage draft events");
-        // TODO: Connect to the relevant event service.
+        boolean managing = true;
+
+        while (managing) {
+            System.out.println("\n=== Manage Draft Events ===");
+            System.out.println("1. Create draft event");
+            System.out.println("2. View all events");
+            System.out.println("3. Find event by ID");
+            System.out.println("4. Edit draft event");
+            System.out.println("0. Back to main menu");
+            System.out.print("Select an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    createDraftEvent();
+                    break;
+                case "2":
+                    viewEvents();
+                    break;
+                case "3":
+                    findEvent();
+                    break;
+                case "4":
+                    editDraftEvent();
+                    break;
+                case "0":
+                    managing = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Try again.");
+            }
+        }
     }
+
+    private void createDraftEvent() {
+        try {
+            EventDraftRequest request = readEventDraftRequest();
+            Event event = eventPlanningService.createDraft(request);
+
+            System.out.println("Draft event created successfully:");
+            displayEvent(event);
+        } catch (RuntimeException e) {
+            System.out.println("Could not create draft event: " + e.getMessage());
+        }
+    }
+
+    private void viewEvents() {
+        List<Event> events = eventPlanningService.listAll();
+
+        System.out.println("\n=== Events ===");
+
+        if (events.isEmpty()) {
+            System.out.println("No events found.");
+            return;
+        }
+
+        for (Event event : events) {
+            displayEvent(event);
+        }
+    }
+
+    private void findEvent() {
+        System.out.print("Enter event ID (for example, EV-001): ");
+        String id = scanner.nextLine().trim();
+
+        try {
+            displayEvent(eventPlanningService.get(id));
+        } catch (RuntimeException e) {
+            System.out.println("Could not find event: " + e.getMessage());
+        }
+    }
+
+    private void editDraftEvent() {
+        System.out.print("Enter the ID of the draft event to edit: ");
+        String id = scanner.nextLine().trim();
+
+        try {
+            Event existingEvent = eventPlanningService.get(id);
+
+            System.out.println("Current event:");
+            displayEvent(existingEvent);
+            System.out.println("\nEnter the updated event details.");
+
+            EventDraftRequest request = readEventDraftRequest();
+            Event updatedEvent = eventPlanningService.editDraft(id, request);
+
+            System.out.println("Draft event updated successfully:");
+            displayEvent(updatedEvent);
+        } catch (RuntimeException e) {
+            System.out.println("Could not edit draft event: " + e.getMessage());
+        }
+    }
+
+    private EventDraftRequest readEventDraftRequest() {
+        System.out.print("Enter event title: ");
+        String title = scanner.nextLine().trim();
+
+        System.out.println("Enter invitee student IDs separated by commas.");
+        System.out.print("Invitee IDs: ");
+        String inviteeInput = scanner.nextLine().trim();
+
+        List<String> inviteeIds = new ArrayList<>();
+
+        if (!inviteeInput.isBlank()) {
+            for (String id : inviteeInput.split(",")) {
+                String trimmedId = id.trim();
+
+                if (!trimmedId.isEmpty()) {
+                    inviteeIds.add(trimmedId);
+                }
+            }
+        }
+
+        LocalDate windowStart =
+                readDate("Enter event window start date (YYYY-MM-DD): ");
+
+        LocalDate windowEnd =
+                readDate("Enter event window end date (YYYY-MM-DD): ");
+
+        int durationMinutes = readInteger(
+                "Enter duration in minutes (30-180, in 30-minute increments): "
+        );
+
+        System.out.println("\nAvailable room features:");
+        for (RoomFeature feature : RoomFeature.values()) {
+            System.out.println("- " + feature);
+        }
+
+        System.out.println(
+                "Enter required features separated by commas, or leave blank for none."
+        );
+        System.out.print("Required features: ");
+
+        Set<RoomFeature> requiredFeatures =
+                readRoomFeatures(scanner.nextLine().trim());
+
+        int minAttendance = readInteger("Enter minimum attendance: ");
+
+        return new EventDraftRequest(
+                title,
+                inviteeIds,
+                windowStart,
+                windowEnd,
+                durationMinutes,
+                requiredFeatures,
+                minAttendance
+        );
+    }
+
+    private LocalDate readDate(String prompt) {
+        System.out.print(prompt);
+
+        try {
+            return LocalDate.parse(scanner.nextLine().trim());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(
+                    "Invalid date. Use YYYY-MM-DD."
+            );
+        }
+    }
+
+    private int readInteger(String prompt) {
+        System.out.print(prompt);
+
+        try {
+            return Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "Please enter a valid whole number."
+            );
+        }
+    }
+
+    private void displayEvent(Event event) {
+        System.out.println("\nEvent ID: " + event.getId());
+        System.out.println("Title: " + event.getTitle());
+        System.out.println("Status: " + event.getStatus());
+        System.out.println("Invitee IDs: " + event.getInviteeIds());
+        System.out.println(
+                "Date window: " + event.getWindowStart()
+                        + " to " + event.getWindowEnd()
+        );
+        System.out.println(
+                "Duration: " + event.getDurationMinutes() + " minutes"
+        );
+        System.out.println(
+                "Required room features: " + event.getRequiredFeatures()
+        );
+        System.out.println(
+                "Minimum attendance: " + event.getMinAttendance()
+        );
+        System.out.println(
+                "Room ID: " + (event.getRoomId() == null
+                        ? "Not assigned" : event.getRoomId())
+        );
+        System.out.println(
+                "Scheduled slot: " + (event.getSlot() == null
+                        ? "Not scheduled" : event.getSlot())
+        );
+    }
+
+    // ==================== SAVE ====================
 
     private void saveData() {
         System.out.println("Save data");
