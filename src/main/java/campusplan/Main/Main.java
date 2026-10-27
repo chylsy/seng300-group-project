@@ -82,7 +82,7 @@ public class Main {
         System.out.println("2. View rooms");
         System.out.println("3. Manage availability");
         System.out.println("4. Manage draft events");
-        System.out.println("5. Save data");
+//        System.out.println("5. Save data");
         System.out.println("0. Exit");
     }
 
