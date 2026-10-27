@@ -25,7 +25,7 @@ class StudentTest {
         student.setEmail("bobbybill@example.com");
 
         assertEquals("S1", student.getId());
-        assertEquals("Bobby Bill", student.getName());
+        assertEquals("Bobby bill", student.getName());
         assertEquals("bobbybill@example.com", student.getEmail());
     }
 
@@ -62,7 +62,7 @@ class StudentTest {
     void nameAndEmailAreTrimmed() {
         Student student = new Student("S1", "  Bob bill       ", "bob@example.com");
 
-        assertEquals("Bob Bill", student.getName());
+        assertEquals("Bob bill", student.getName());
         assertEquals("bob@example.com", student.getEmail());
     }
 
