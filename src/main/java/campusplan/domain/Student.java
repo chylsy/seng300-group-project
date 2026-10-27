@@ -19,7 +19,7 @@ public class Student {
 
 
      public Student(String id, String name, String email){
-        if (id == null){
+        if (id == null || id.isBlank()){
             throw new IllegalArgumentException("Student ID cannot be null.");
 
         }
