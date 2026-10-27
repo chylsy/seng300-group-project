@@ -9,6 +9,8 @@ import java.util.Set;
 
 //one planned event; starts as a DRAFT and is changed only through the service
 public class Event {
+    public static final String PENDING = "PENDING"; //every invitee starts here
+
     private final String id;               //never changes after creation
     private String title;
     private List<String> inviteeIds;
@@ -29,10 +31,31 @@ public class Event {
         applyDraft(request);
     }
 
+    //independent copy, used by CampusPlanData.deepCopy(); changing the copy never changes the original
+    public Event(Event other) {
+        this.id = other.id;
+        this.title = other.title;
+        this.inviteeIds = List.copyOf(other.inviteeIds);
+        this.windowStart = other.windowStart;
+        this.windowEnd = other.windowEnd;
+        this.durationMinutes = other.durationMinutes;
+        this.requiredFeatures = Set.copyOf(other.requiredFeatures);
+        this.minAttendance = other.minAttendance;
+        this.status = other.status;
+        this.responses.putAll(other.responses); //new map with the same entries
+        this.roomId = other.roomId;
+        this.slot = other.slot;
+    }
+
     //replaces the planning details with the request's values, id and status stay the same
     public void applyDraft(EventDraftRequest request) {
         this.title = request.getTitle().trim();
         this.inviteeIds = request.getInviteeIds();
+        //students who stay keep their answer, removed students lose theirs, new students start PENDING
+        responses.keySet().retainAll(inviteeIds);
+        for (String studentId : inviteeIds) {
+            responses.putIfAbsent(studentId, PENDING);
+        }
         this.windowStart = request.getWindowStart();
         this.windowEnd = request.getWindowEnd();
         this.durationMinutes = request.getDurationMinutes();
