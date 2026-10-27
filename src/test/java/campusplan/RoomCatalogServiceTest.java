@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import campusplan.domain.CampusPlanData;
 import campusplan.domain.Room;
 import campusplan.domain.RoomFeature;
-import campusplan.ValidationException;
+import campusplan.error.ValidationException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
