@@ -1,0 +1,5 @@
+Repository URL: https://github.com/chylsy/seng300-group-project
+Tag: p1
+Commit Hash: aefb6d6e6d58f3c41e4ba9f843d8534282d49f8f
+Java Version: 21
+Test Date: 2026-10-27
