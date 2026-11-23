@@ -80,4 +80,18 @@ class EventConfirmCancelTest {
         assertEquals("R1", draft.getRoomId());
         assertEquals(SLOT, draft.getSlot());
     }
+
+    @Test
+    void confirmFailsWhenTooFewInviteesAreFree() {
+        data.getRooms().put("R2", new Room("R2", "Room 2", 10, Set.of(RoomFeature.PROJECTOR)));
+        Event other = service.createDraft(new EventDraftRequest("Other", List.of("s1", "s2", "s3"),
+                DAY, DAY, 60, Set.of(RoomFeature.PROJECTOR), 2));
+        service.confirm(other.getId(), "R2", SLOT);   //different room, so R1 is still free
+        other.getResponses().put("s1", Event.ACCEPTED);
+        other.getResponses().put("s2", Event.ACCEPTED);
+
+        //s1 and s2 are busy at SLOT, so only s3 is eligible and the minimum is 2
+        assertThrows(ValidationException.class, () -> service.confirm(draft.getId(), "R1", SLOT));
+        assertStillDraft();
+    }
 }
