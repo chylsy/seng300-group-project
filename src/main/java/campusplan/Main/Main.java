@@ -1,5 +1,6 @@
 package campusplan.Main;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
@@ -18,11 +19,14 @@ import campusplan.domain.RoomFeature;
 import campusplan.domain.Student;
 import campusplan.domain.TimeInterval;
 import campusplan.domain.UuidIdGenerator;
+import campusplan.error.CampusPlanException;
 import campusplan.error.DuplicateEmailException;
 import campusplan.error.NotFoundException;
+import campusplan.persistence.JsonDataStore;
 import campusplan.service.AvailabilityService;
 import campusplan.service.EventPlanningService;
 import campusplan.service.RoomCatalogService;
+import campusplan.service.StorageService;
 import campusplan.service.StudentService;
 
 public class Main {
@@ -32,20 +36,41 @@ public class Main {
     private final AvailabilityService availabilityService;
     private final EventPlanningService eventPlanningService;
 
-    public Main(CampusPlanData data, IdGenerator ids) {
-        scanner = new Scanner(System.in);
-        studentService = new StudentService(data, ids);
-        roomCatalogService = new RoomCatalogService(data);
-        availabilityService = new AvailabilityService(data);
+
+    /** Where the app's data is saved between runs (as per FR-03) */
+    private static final Path DATA_FILE = Path.of("data", "campusplan.json");
+
+    /** Sample data offered when there's no saved data yet */
+    private static final Path SEED_FILE = Path.of("sample-data", "seed.json");
+
+    private final StorageService storage;
+
+    public Main(CampusPlanData data, IdGenerator ids, StorageService storage) {        scanner              = new Scanner(System.in);
+        this.storage         = storage;
+        studentService       = new StudentService(data, ids);
+        roomCatalogService   = new RoomCatalogService(data);
+        availabilityService  = new AvailabilityService(data);
         eventPlanningService = new EventPlanningService(data);
     }
-    public static void main(String[] args) {
-        CampusPlanData data = new CampusPlanData();
-        IdGenerator ids = new UuidIdGenerator();
 
-        Main app = new Main(data, ids);
+    public static void main(String[] args) {
+        StorageService storage = new StorageService(new JsonDataStore(DATA_FILE));
+
+        CampusPlanData data;
+        try {
+            data = storage.startApp();
+        } catch (CampusPlanException e) {
+            // Corrupt or unreadable file: report it and stop, so the file is never overwritten.
+            System.out.println("Could not load saved data from " + DATA_FILE + ": " + e.getMessage());
+            System.out.println("The file was left unchanged. Fix, move or back it up, then restart.");
+            return;
+        }
+
+        IdGenerator ids = new UuidIdGenerator();
+        Main app = new Main(data, ids, storage);
         app.run();
     }
+
     public void run() {
         boolean running = true;
 
