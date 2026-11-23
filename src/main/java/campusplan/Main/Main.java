@@ -1,30 +1,29 @@
 package campusplan.Main;
 
-import java.util.Scanner;
-import java.util.List;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
 
-import campusplan.service.StudentService;
-import campusplan.service.RoomCatalogService;
-import campusplan.service.AvailabilityService;
-import campusplan.service.EventPlanningService;
-
-import campusplan.domain.Student;
-import campusplan.domain.Room;
-import campusplan.domain.RoomFeature;
 import campusplan.domain.CampusPlanData;
-import campusplan.domain.IdGenerator;
-import campusplan.domain.TimeInterval;
 import campusplan.domain.Event;
 import campusplan.domain.EventDraftRequest;
-
+import campusplan.domain.IdGenerator;
+import campusplan.domain.Room;
+import campusplan.domain.RoomFeature;
+import campusplan.domain.Student;
+import campusplan.domain.TimeInterval;
+import campusplan.domain.UuidIdGenerator;
 import campusplan.error.DuplicateEmailException;
 import campusplan.error.NotFoundException;
+import campusplan.service.AvailabilityService;
+import campusplan.service.EventPlanningService;
+import campusplan.service.RoomCatalogService;
+import campusplan.service.StudentService;
 
 public class Main {
     private final Scanner scanner;
@@ -42,12 +41,7 @@ public class Main {
     }
     public static void main(String[] args) {
         CampusPlanData data = new CampusPlanData();
-        IdGenerator ids = new IdGenerator() {
-            @Override
-            public String next(String prefix) {
-                return "";
-            }
-        };
+        IdGenerator ids = new UuidIdGenerator();
 
         Main app = new Main(data, ids);
         app.run();
