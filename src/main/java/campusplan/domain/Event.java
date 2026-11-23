@@ -1,5 +1,8 @@
 package campusplan.domain;
 
+import campusplan.error.NotFoundException;
+import campusplan.error.NotFoundException;
+
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +13,8 @@ import java.util.Set;
 //one planned event; starts as a DRAFT and is changed only through the service
 public class Event {
     public static final String PENDING = "PENDING"; //every invitee starts here
+    public static final String ACCEPTED = "ACCEPTED";
+    public static final String DECLINED = "DECLINED";
 
     private final String id;               //never changes after creation
     private String title;
@@ -75,4 +80,21 @@ public class Event {
     public Map<String, String> getResponses() { return responses; }
     public String getRoomId() { return roomId; }
     public TimeInterval getSlot() { return slot; }
+
+    // check if event is draft
+    public boolean isDraft() {
+        return status == EventStatus.DRAFT;
+    }
+
+    //  get owner id
+    public String responseOf(String studentId) {
+        String answer = responses.get(studentId);
+        if (answer == null){
+            throw new NotFoundException("Student", studentId);
+        }
+        return answer;
+    }
+
+    //
+
 }
