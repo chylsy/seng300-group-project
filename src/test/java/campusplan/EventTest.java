@@ -3,6 +3,11 @@ package campusplan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import campusplan.domain.EventStatus;
+import campusplan.domain.TimeInterval;
+import java.time.LocalTime;
 
 import campusplan.domain.Event;
 import campusplan.domain.EventDraftRequest;
@@ -38,5 +43,26 @@ class EventTest {
     void responseOfUninvitedStudentThrows() {
         NotFoundException e = assertThrows(NotFoundException.class, () -> draft().responseOf("s9"));
         assertEquals("Student not found: s9", e.getMessage());
+    }
+
+    @Test
+    void scheduleSetsRoomSlotAndStatus() {
+        Event event = draft();
+        TimeInterval slot = new TimeInterval(LocalDate.of(2026, 11, 2), LocalTime.of(10, 0), LocalTime.of(11, 0));
+        event.schedule("R1", slot);
+        assertEquals(EventStatus.SCHEDULED, event.getStatus());
+        assertEquals("R1", event.getRoomId());
+        assertEquals(slot, event.getSlot());
+    }
+
+    @Test
+    void cancelFreesRoomAndKeepsResponses() {
+        Event event = draft();
+        TimeInterval slot = new TimeInterval(LocalDate.of(2026, 11, 2), LocalTime.of(10, 0), LocalTime.of(11, 0));
+        event.schedule("R1", slot);
+        event.cancel();
+        assertEquals(EventStatus.CANCELLED, event.getStatus());
+        assertNull(event.getRoomId());
+        assertEquals(Event.PENDING, event.responseOf("s1"));
     }
 }

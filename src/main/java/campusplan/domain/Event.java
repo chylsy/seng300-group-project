@@ -68,6 +68,20 @@ public class Event {
         this.minAttendance = request.getMinAttendance();
     }
 
+    //marks the event as scheduled in this room at this time
+    public void schedule(String roomId, TimeInterval slot) {
+        this.roomId = roomId;
+        this.slot = slot;
+        this.status = EventStatus.SCHEDULED;
+    }
+
+    //marks the event as cancelled and frees its room and time
+    public void cancel() {
+        this.roomId = null;
+        this.slot = null;
+        this.status = EventStatus.CANCELLED;
+    }
+
     public String getId() { return id; }
     public String getTitle() { return title; }
     public List<String> getInviteeIds() { return inviteeIds; }
