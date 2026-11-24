@@ -97,7 +97,7 @@ public class Main {
         }
     }
 
-    public void run() {
+        public void run() {
         boolean running = true;
 
         while (running) {
@@ -106,28 +106,34 @@ public class Main {
             System.out.print("Select an option: ");
             String choice = scanner.nextLine().trim();
 
-            switch (choice) {
-                case "1":
-                    manageStudents();
-                    break;
-                case "2":
-                    viewRooms();
-                    break;
-                case "3":
-                    manageAvailability();
-                    break;
-                case "4":
-                    manageDraftEvents();
-                    break;
-//                case "5":
-//                    saveData();
-//                    break;
-                case "0":
-                    running = false;
-                    System.out.println("Exiting CampusPlan.");
-                    break;
-                default:
-                    System.out.println("Invalid option. Try again.");
+            try {
+                switch (choice) {
+                    case "1":
+                        manageStudents();
+                        break;
+                    case "2":
+                        viewRooms();
+                        break;
+                    case "3":
+                        manageAvailability();
+                        break;
+                    case "4":
+                        manageDraftEvents();
+                        break;
+                    case "5":
+                        saveData();
+                        break;
+                    case "0":
+                        running = false;
+                        offerSaveOnExit();
+                        System.out.println("Exiting CampusPlan.");
+                        break;
+                    default:
+                        System.out.println("Invalid option. Try again.");
+                }
+            } catch (CampusPlanException e) {
+                // Safety net: a rejected operation prints its message instead of crashing.
+                System.out.println("Error: " + e.getMessage());
             }
         }
     }
@@ -138,7 +144,7 @@ public class Main {
         System.out.println("2. View rooms");
         System.out.println("3. Manage availability");
         System.out.println("4. Manage draft events");
-//        System.out.println("5. Save data");
+        System.out.println("5. Save data");
         System.out.println("0. Exit");
     }
 
@@ -687,8 +693,20 @@ public class Main {
 
     // ==================== SAVE ====================
 
-    //    private void saveData() {
-    //        System.out.println("Save data");
-    //        // TODO: Connect to the application's storage operation.
-    //    }
+    private void saveData() {
+        try {
+            storage.save();
+            System.out.println("Saved to " + DATA_FILE + ".");
+        } catch (CampusPlanException e) {
+            System.out.println("Save failed: " + e.getMessage());
+            System.out.println("The previous saved file was kept.");
+        }
+    }
+
+    private void offerSaveOnExit() {
+        System.out.print("Save before exiting? (y/n): ");
+        if (scanner.nextLine().trim().equalsIgnoreCase("y")) {
+            saveData();
+        }
+    }
 }
