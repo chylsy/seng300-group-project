@@ -1,5 +1,5 @@
 package campusplan.domain;
-
+import campusplan.error.ValidationException;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -75,4 +75,17 @@ public class Event {
     public Map<String, String> getResponses() { return responses; }
     public String getRoomId() { return roomId; }
     public TimeInterval getSlot() { return slot; }
+
+    //moves a DRAFT to SCHEDULED with the chosen room and time; the service checks the rules before calling this
+    public void schedule(String roomId, TimeInterval slot) {
+        if (status!=EventStatus.DRAFT) {
+            throw new ValidationException("status", "Only DRAFT events can be scheduled");
+        }
+        if (roomId ==null || roomId.isBlank() || slot==null) {
+            throw new ValidationException("schedule", "A room and a time slot are required");
+        }
+        this.roomId=roomId;
+        this.slot=slot;
+        this.status=EventStatus.SCHEDULED;
+    }
 }
