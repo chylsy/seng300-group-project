@@ -45,7 +45,8 @@ public class Main {
 
     private final StorageService storage;
 
-    public Main(CampusPlanData data, IdGenerator ids, StorageService storage) {        scanner              = new Scanner(System.in);
+    public Main(CampusPlanData data, IdGenerator ids, StorageService storage) {
+        scanner              = new Scanner(System.in);
         this.storage         = storage;
         studentService       = new StudentService(data, ids);
         roomCatalogService   = new RoomCatalogService(data);
@@ -68,7 +69,32 @@ public class Main {
 
         IdGenerator ids = new UuidIdGenerator();
         Main app = new Main(data, ids, storage);
+        app.offerSeedIfEmpty();
         app.run();
+    }
+
+    /** Missing storage starts empty and offers the documented seed-data load. */
+    private void offerSeedIfEmpty() {
+
+        if (!storage.getData().isEmpty()) {
+
+            System.out.println("Loaded saved data from " + DATA_FILE + ".");
+            return;
+        }
+
+        System.out.println("No saved data found.");
+        System.out.print("Load sample data from " + SEED_FILE + "? (y/n): ");
+        if (scanner.nextLine().trim().equalsIgnoreCase("y")) {
+
+            try {
+
+                storage.loadSeed(SEED_FILE);
+                System.out.println("Sample data loaded.");
+            } catch (CampusPlanException e) {
+
+                System.out.println("Could not load sample data: " + e.getMessage());
+            }
+        }
     }
 
     public void run() {
@@ -661,9 +687,8 @@ public class Main {
 
     // ==================== SAVE ====================
 
-//    private void saveData() {
-//        System.out.println("Save data");
-//        // TODO: Connect to the application's storage operation.
-//    }
+    //    private void saveData() {
+    //        System.out.println("Save data");
+    //        // TODO: Connect to the application's storage operation.
+    //    }
 }
-
