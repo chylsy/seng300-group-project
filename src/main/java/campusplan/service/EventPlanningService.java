@@ -78,7 +78,18 @@ public class EventPlanningService {
         return event;
     }
 
-
+    //cancels a scheduled event and frees its room, or throws and changes nothing
+    public Event cancel(String eventId, boolean confirmed) {
+        Event event = get(eventId);
+        if (event.getStatus() != EventStatus.SCHEDULED) {
+            throw new ValidationException("status", "Only SCHEDULED events can be cancelled");
+        }
+        if (!confirmed) {
+            throw new ValidationException("confirmed", "Cancelling needs confirmation");
+        }
+        event.cancel();
+        return event;
+    }
 
     //the event with this id, or NotFoundException
     public Event get(String id) {

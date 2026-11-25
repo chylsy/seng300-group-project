@@ -102,4 +102,49 @@ class EventConfirmCancelTest {
         assertThrows(NotFoundException.class, () -> service.confirm(draft.getId(), "R99", SLOT));
         assertStillDraft();
     }
+
+    @Test
+    void cancelFreesRoomAndKeepsResponses() {
+        service.confirm(draft.getId(), "R1", SLOT);
+
+        service.cancel(draft.getId(), true);
+        assertEquals(EventStatus.CANCELLED, draft.getStatus());
+        assertNull(draft.getRoomId());
+        assertNull(draft.getSlot());
+        assertEquals(Event.PENDING, draft.responseOf("s1"));   //responses are kept on record
+    }
+
+    @Test
+    void cancelFailsWhenEventIsNotScheduled() {
+        //draft was never confirmed, and confirmed is true, so only the status check can reject it
+        assertThrows(ValidationException.class, () -> service.cancel(draft.getId(), true));
+        assertStillDraft();
+    }
+
+    @Test
+    void cancelFailsWhenNotConfirmed() {
+        service.confirm(draft.getId(), "R1", SLOT);   //scheduled, so only the confirmation check can reject it
+
+        assertThrows(ValidationException.class, () -> service.cancel(draft.getId(), false));
+        assertEquals(EventStatus.SCHEDULED, draft.getStatus());
+        assertEquals("R1", draft.getRoomId());
+        assertEquals(SLOT, draft.getSlot());
+    }
+
+    @Test
+    void cancelFailsWhenEventDoesNotExist() {
+        //a missing event is a NotFoundException, not a broken rule
+        assertThrows(NotFoundException.class, () -> service.cancel("EV-999", true));
+    }
+
+    @Test
+    void cancelledRoomCanBeBookedAgain() {
+        service.confirm(draft.getId(), "R1", SLOT);
+        service.cancel(draft.getId(), true);
+
+        Event other = service.createDraft(new EventDraftRequest("Other", List.of("s1", "s2", "s3"),
+                DAY, DAY, 60, Set.of(RoomFeature.PROJECTOR), 2));
+        service.confirm(other.getId(), "R1", SLOT);   //would throw if the cancelled event still held R1
+        assertEquals(EventStatus.SCHEDULED, other.getStatus());
+    }
 }
