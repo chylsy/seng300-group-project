@@ -4,11 +4,10 @@ Official group project repository for SENG 300 – Introduction to Software Engi
 
 ## Project Overview
 
-CampusPlan is a local Java application designed to help students organize study sessions, project meetings, club workshops, and other group activities.
-
-The application allows organizers to manage students, track availability, find suitable rooms, create events, and generate scheduling suggestions.
+CampusPlan is a local Java command-line application that helps students organize study sessions, project meetings, club workshops and other group activities. Organizers can manage students, track availability, find suitable rooms, create events and generate scheduling suggestions.
 
 ## Team
+
 | Name | UCID | Email |
 | :--- | :--- | :--- |
 | Sara Affara | 30241537 | sara.affara1@ucalgary.ca |
@@ -19,57 +18,84 @@ The application allows organizers to manage students, track availability, find s
 | Parth Singh | 30250082 | parth.singh1@ucalgary.ca |
 | Nadine Torres | 30229594 | nadine.torres@ucalgary.ca |
 
-## Technologies
+## Prerequisites
 
-- Java 21
-- Apache Maven (Maven Wrapper)
-- JUnit 5
-- JSON
-- Git and GitHub
-
-## Project Structure
-
-```text
-src/
-├── main/java/campusplan/
-└── test/java/campusplan/
-
-sample-data/
-docs/
-pom.xml
-mvnw
-mvnw.cmd
-README.md
-```
-
-## Getting Started
-
-### Prerequisites
-- JDK 21
+- JDK 21 or newer
 - Git
 
-### Build and Test
+Maven does not need to be installed. The project includes the Maven Wrapper (`mvnw`).
+
+## Build and Test
+
+From the project root:
 
 ```bash
 ./mvnw clean test
 ```
 
+On Windows, use `mvnw.cmd clean test`.
+
 ## Running the Application
 
-*To be added as application development progresses.*
+```bash
+./mvnw -q compile exec:java
+```
 
-## Project Milestones
+On Windows, use `mvnw.cmd -q compile exec:java`.
 
-*Milestone details and progress to be updated throughout development.*
+Run commands from the project root so the app can find `data/` and `sample-data/`.
+
+## Data File
+
+- Application data is saved to `data/campusplan.json` (created on first save).
+- Data is saved when you choose **5. Save data** or answer **y** to "Save before exiting?".
+- Saving writes to a temporary file first, so a failed save keeps the last valid file.
+- If the data file is corrupt, the app shows an error and exits without overwriting it.
+- `data/` is excluded from Git.
+
+## Seed Data
+
+If no saved data exists at startup, the app asks:
+
+```
+Load sample data from sample-data/seed.json? (y/n)
+```
+
+Answer **y** to load the sample students, rooms, availability and events. Seed data can only be loaded into an empty application.
+
+`sample-data/no-suggestions.json` is an additional dataset for testing the no-suggestion case.
+
+## Reset and Backup
+
+- **Back up:** copy `data/campusplan.json` somewhere safe.
+- **Restore:** copy the backup back to `data/campusplan.json`.
+- **Reset to empty:** delete `data/campusplan.json`. The next start offers the seed data again.
+
+## Project Structure
+
+```text
+src/main/java/campusplan/
+├── Main/          Command-line interface (entry point: Main)
+├── service/       Application services (students, rooms, availability, events, storage)
+├── domain/        Domain model and business rules
+├── persistence/   DataStore interface, JSON and in-memory implementations
+└── error/         CampusPlanException and its subclasses
+src/test/java/campusplan/   JUnit 5 tests
+sample-data/                Seed and test datasets
+docs/                       Requirements, design, plan, traceability, test reports, release info
+```
+
+Dependencies point downward: the CLI calls services, services use the domain model, and persistence depends only on the domain.
 
 ## Development Workflow
 
-*Branching conventions, pull request guidelines, and review procedures to be finalized by the team.*
-
-## Documentation
-
-*Project documentation will be maintained in the `docs/` directory.*
+- `main` is protected: changes go through a pull request with at least one approving review.
+- Each task gets its own branch off `main` (for example `fix/cli-startup`, `feature/confirm-cancel`).
+- Every pull request includes a test log from `./mvnw clean test`.
+- Releases are tagged `p1`, `p2` and `p3`.
 
 ## Known Limitations
 
-*To be updated as features are implemented and tested.*
+- P2 features (scheduling suggestions, confirm/cancel, attendance responses, roster export, undo/redo) are in progress.
+- Data is only saved when the user chooses to save.
+- The command-line interface is English only.

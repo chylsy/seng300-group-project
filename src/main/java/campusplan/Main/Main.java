@@ -1,30 +1,33 @@
 package campusplan.Main;
 
-import java.util.Scanner;
-import java.util.List;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.ArrayList;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
 
-import campusplan.service.StudentService;
-import campusplan.service.RoomCatalogService;
-import campusplan.service.AvailabilityService;
-import campusplan.service.EventPlanningService;
-
-import campusplan.domain.Student;
-import campusplan.domain.Room;
-import campusplan.domain.RoomFeature;
 import campusplan.domain.CampusPlanData;
-import campusplan.domain.IdGenerator;
-import campusplan.domain.TimeInterval;
 import campusplan.domain.Event;
 import campusplan.domain.EventDraftRequest;
-
+import campusplan.domain.IdGenerator;
+import campusplan.domain.Room;
+import campusplan.domain.RoomFeature;
+import campusplan.domain.Student;
+import campusplan.domain.TimeInterval;
+import campusplan.domain.UuidIdGenerator;
+import campusplan.error.CampusPlanException;
 import campusplan.error.DuplicateEmailException;
 import campusplan.error.NotFoundException;
+import campusplan.persistence.JsonDataStore;
+import campusplan.service.AvailabilityService;
+import campusplan.service.EventPlanningService;
+import campusplan.service.RoomCatalogService;
+import campusplan.service.StorageService;
+import campusplan.service.StudentService;
 
 public class Main {
     private final Scanner scanner;
@@ -33,26 +36,68 @@ public class Main {
     private final AvailabilityService availabilityService;
     private final EventPlanningService eventPlanningService;
 
-    public Main(CampusPlanData data, IdGenerator ids) {
-        scanner = new Scanner(System.in);
-        studentService = new StudentService(data, ids);
-        roomCatalogService = new RoomCatalogService(data);
-        availabilityService = new AvailabilityService(data);
+
+    /** Where the app's data is saved between runs (as per FR-03) */
+    private static final Path DATA_FILE = Path.of("data", "campusplan.json");
+
+    /** Sample data offered when there's no saved data yet */
+    private static final Path SEED_FILE = Path.of("sample-data", "seed.json");
+
+    private final StorageService storage;
+
+    public Main(CampusPlanData data, IdGenerator ids, StorageService storage) {
+        scanner              = new Scanner(System.in);
+        this.storage         = storage;
+        studentService       = new StudentService(data, ids);
+        roomCatalogService   = new RoomCatalogService(data);
+        availabilityService  = new AvailabilityService(data);
         eventPlanningService = new EventPlanningService(data);
     }
-    public static void main(String[] args) {
-        CampusPlanData data = new CampusPlanData();
-        IdGenerator ids = new IdGenerator() {
-            @Override
-            public String next(String prefix) {
-                return "";
-            }
-        };
 
-        Main app = new Main(data, ids);
+    public static void main(String[] args) {
+        StorageService storage = new StorageService(new JsonDataStore(DATA_FILE));
+
+        CampusPlanData data;
+        try {
+            data = storage.startApp();
+        } catch (CampusPlanException e) {
+            // Corrupt or unreadable file: report it and stop, so the file is never overwritten.
+            System.out.println("Could not load saved data from " + DATA_FILE + ": " + e.getMessage());
+            System.out.println("The file was left unchanged. Fix, move or back it up, then restart.");
+            return;
+        }
+
+        IdGenerator ids = new UuidIdGenerator();
+        Main app = new Main(data, ids, storage);
+        app.offerSeedIfEmpty();
         app.run();
     }
-    public void run() {
+
+    /** Missing storage starts empty and offers the documented seed-data load. */
+    private void offerSeedIfEmpty() {
+
+        if (!storage.getData().isEmpty()) {
+
+            System.out.println("Loaded saved data from " + DATA_FILE + ".");
+            return;
+        }
+
+        System.out.println("No saved data found.");
+        System.out.print("Load sample data from " + SEED_FILE + "? (y/n): ");
+        if (scanner.nextLine().trim().equalsIgnoreCase("y")) {
+
+            try {
+
+                storage.loadSeed(SEED_FILE);
+                System.out.println("Sample data loaded.");
+            } catch (CampusPlanException e) {
+
+                System.out.println("Could not load sample data: " + e.getMessage());
+            }
+        }
+    }
+
+        public void run() {
         boolean running = true;
 
         while (running) {
@@ -61,28 +106,34 @@ public class Main {
             System.out.print("Select an option: ");
             String choice = scanner.nextLine().trim();
 
-            switch (choice) {
-                case "1":
-                    manageStudents();
-                    break;
-                case "2":
-                    viewRooms();
-                    break;
-                case "3":
-                    manageAvailability();
-                    break;
-                case "4":
-                    manageDraftEvents();
-                    break;
-//                case "5":
-//                    saveData();
-//                    break;
-                case "0":
-                    running = false;
-                    System.out.println("Exiting CampusPlan.");
-                    break;
-                default:
-                    System.out.println("Invalid option. Try again.");
+            try {
+                switch (choice) {
+                    case "1":
+                        manageStudents();
+                        break;
+                    case "2":
+                        viewRooms();
+                        break;
+                    case "3":
+                        manageAvailability();
+                        break;
+                    case "4":
+                        manageDraftEvents();
+                        break;
+                    case "5":
+                        saveData();
+                        break;
+                    case "0":
+                        running = false;
+                        offerSaveOnExit();
+                        System.out.println("Exiting CampusPlan.");
+                        break;
+                    default:
+                        System.out.println("Invalid option. Try again.");
+                }
+            } catch (CampusPlanException e) {
+                // Safety net: a rejected operation prints its message instead of crashing.
+                System.out.println("Error: " + e.getMessage());
             }
         }
     }
@@ -93,7 +144,7 @@ public class Main {
         System.out.println("2. View rooms");
         System.out.println("3. Manage availability");
         System.out.println("4. Manage draft events");
-//        System.out.println("5. Save data");
+        System.out.println("5. Save data");
         System.out.println("0. Exit");
     }
 
@@ -642,9 +693,20 @@ public class Main {
 
     // ==================== SAVE ====================
 
-//    private void saveData() {
-//        System.out.println("Save data");
-//        // TODO: Connect to the application's storage operation.
-//    }
-}
+    private void saveData() {
+        try {
+            storage.save();
+            System.out.println("Saved to " + DATA_FILE + ".");
+        } catch (CampusPlanException e) {
+            System.out.println("Save failed: " + e.getMessage());
+            System.out.println("The previous saved file was kept.");
+        }
+    }
 
+    private void offerSaveOnExit() {
+        System.out.print("Save before exiting? (y/n): ");
+        if (scanner.nextLine().trim().equalsIgnoreCase("y")) {
+            saveData();
+        }
+    }
+}

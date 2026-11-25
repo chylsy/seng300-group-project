@@ -1,8 +1,6 @@
 package campusplan.domain;
-
 import campusplan.error.NotFoundException;
-import campusplan.error.NotFoundException;
-
+import campusplan.error.ValidationException;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -68,13 +66,6 @@ public class Event {
         this.minAttendance = request.getMinAttendance();
     }
 
-    //marks the event as scheduled in this room at this time
-    public void schedule(String roomId, TimeInterval slot) {
-        this.roomId = roomId;
-        this.slot = slot;
-        this.status = EventStatus.SCHEDULED;
-    }
-
     //marks the event as cancelled and frees its room and time
     public void cancel() {
         this.roomId = null;
@@ -109,6 +100,16 @@ public class Event {
         return answer;
     }
 
-    //
-
+    //moves a DRAFT to SCHEDULED with the chosen room and time; the service checks the rules before calling this
+    public void schedule(String roomId, TimeInterval slot) {
+        if (status!=EventStatus.DRAFT) {
+            throw new ValidationException("status", "Only DRAFT events can be scheduled");
+        }
+        if (roomId ==null || roomId.isBlank() || slot==null) {
+            throw new ValidationException("schedule", "A room and a time slot are required");
+        }
+        this.roomId=roomId;
+        this.slot=slot;
+        this.status=EventStatus.SCHEDULED;
+    }
 }
