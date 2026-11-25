@@ -12,7 +12,9 @@
 - Added `Event.schedule(roomId, slot)`, which moves a DRAFT to SCHEDULED. ([#30](https://github.com/chylsy/seng300-group-project/issues/30))
 
 **FR-05: Confirm and cancel** (Mckenzie)
-- TODO: summary and issue link.
+**FR-05: Confirm and cancel** (Mckenzie)
+- Added `EventPlanningService.confirm(eventId, roomId, slot)`, which first checks that the event is a DRAFT, the room exists and is free, the time fits the event, and enough invitees are available, and only then moves the event to SCHEDULED. ([#8](https://github.com/chylsy/seng300-group-project/issues/8), [PR #36](https://github.com/chylsy/seng300-group-project/pull/36))
+- Added `EventPlanningService.cancel(eventId, confirmed)`, which only works on a SCHEDULED event, needs the user to confirm, and then sets the status to CANCELLED and frees the room. ([#8](https://github.com/chylsy/seng300-group-project/issues/8), [PR #36](https://github.com/chylsy/seng300-group-project/pull/36))
 
 **FR-06: Attendance responses** (Sara)
 - TODO: summary and issue link.
