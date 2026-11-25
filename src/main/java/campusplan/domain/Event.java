@@ -1,4 +1,5 @@
 package campusplan.domain;
+import campusplan.error.NotFoundException;
 import campusplan.error.ValidationException;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -10,6 +11,8 @@ import java.util.Set;
 //one planned event; starts as a DRAFT and is changed only through the service
 public class Event {
     public static final String PENDING = "PENDING"; //every invitee starts here
+    public static final String ACCEPTED = "ACCEPTED";
+    public static final String DECLINED = "DECLINED";
 
     private final String id;               //never changes after creation
     private String title;
@@ -63,6 +66,13 @@ public class Event {
         this.minAttendance = request.getMinAttendance();
     }
 
+    //marks the event as cancelled and frees its room and time
+    public void cancel() {
+        this.roomId = null;
+        this.slot = null;
+        this.status = EventStatus.CANCELLED;
+    }
+
     public String getId() { return id; }
     public String getTitle() { return title; }
     public List<String> getInviteeIds() { return inviteeIds; }
@@ -75,6 +85,20 @@ public class Event {
     public Map<String, String> getResponses() { return responses; }
     public String getRoomId() { return roomId; }
     public TimeInterval getSlot() { return slot; }
+
+    // check if event is draft
+    public boolean isDraft() {
+        return status == EventStatus.DRAFT;
+    }
+
+    //  get owner id
+    public String responseOf(String studentId) {
+        String answer = responses.get(studentId);
+        if (answer == null){
+            throw new NotFoundException("Student", studentId);
+        }
+        return answer;
+    }
 
     //moves a DRAFT to SCHEDULED with the chosen room and time; the service checks the rules before calling this
     public void schedule(String roomId, TimeInterval slot) {
