@@ -6,6 +6,9 @@ import campusplan.domain.EventDraftRequest;
 import campusplan.domain.EventStatus;
 import campusplan.domain.IdGenerator;
 import campusplan.domain.UuidIdGenerator;
+import campusplan.domain.Room;
+import campusplan.domain.TimeInterval;
+import campusplan.domain.StudentAvailability;
 import campusplan.error.NotFoundException;
 import campusplan.error.ValidationException;
 import java.time.temporal.ChronoUnit;
@@ -14,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.time.LocalDate;
 
 /**
  * Creates, edits and reads draft events. Every rule is checked before any data changes,
@@ -23,6 +27,7 @@ public class EventPlanningService {
     private static final Comparator<Event> BY_ID = Comparator.comparing(Event::getId);
     private final CampusPlanData data;
     private final IdGenerator idGenerator;
+    private final EligibilityRule rule;
 
     //normal use: ids come from the team's UUID generator
     public EventPlanningService(CampusPlanData data) {
@@ -33,6 +38,7 @@ public class EventPlanningService {
     public EventPlanningService(CampusPlanData data, IdGenerator idGenerator) {
         this.data = Objects.requireNonNull(data, "data");
         this.idGenerator = Objects.requireNonNull(idGenerator, "idGenerator");
+        this.rule = new AvailabilityEligibilityRule(data);
     }
 
     //makes a new DRAFT event, or throws if any rule E1-E7 fails
@@ -55,6 +61,36 @@ public class EventPlanningService {
         return event;
     }
 
+    //schedules a draft event in this room at this time, or throws and changes nothing
+    public Event confirm(String eventId, String roomId, TimeInterval slot) {
+        Event event = get(eventId);
+        requireDraft(event);
+        Room room = requireRoom(roomId);
+        requireSlot(slot);
+        requireSlotMatchesDuration(event, slot);
+        requireSlotInWindow(event, slot);
+        requireSlotInOpeningHours(slot);
+        requireRoomHoldsInvitees(event, room);
+        requireRoomHasFeatures(event, room);
+        requireRoomFree(room, slot);
+        requireEnoughEligible(event, slot);
+        event.schedule(roomId, slot);   //the only change, at the very end
+        return event;
+    }
+
+    //cancels a scheduled event and frees its room, or throws and changes nothing
+    public Event cancel(String eventId, boolean confirmed) {
+        Event event = get(eventId);
+        if (event.getStatus() != EventStatus.SCHEDULED) {
+            throw new ValidationException("status", "Only SCHEDULED events can be cancelled");
+        }
+        if (!confirmed) {
+            throw new ValidationException("confirmed", "Cancelling needs confirmation");
+        }
+        event.cancel();
+        return event;
+    }
+
     //the event with this id, or NotFoundException
     public Event get(String id) {
         Event event = data.getEvents().get(id);
@@ -62,6 +98,109 @@ public class EventPlanningService {
             throw new NotFoundException("Event", id);
         }
         return event;
+    }
+
+    //confirm only works on a draft
+    private void requireDraft(Event event) {
+        if (!event.isDraft()) {
+            throw new ValidationException("status", "Only DRAFT events can be confirmed");
+        }
+    }
+
+    //the room with this id, or NotFoundException
+    private Room requireRoom(String roomId) {
+        Room room = data.getRooms().get(roomId);
+        if (room == null) {
+            throw new NotFoundException("Room", roomId);
+        }
+        return room;
+    }
+
+    //the slot must be exactly as long as the event needs
+    private void requireSlotMatchesDuration(Event event, TimeInterval slot) {
+        if (slot.minutes() != event.getDurationMinutes()) {
+            throw new ValidationException("slot", "Slot length must match the event duration");
+        }
+    }
+
+    //the slot's day must fall inside the event's date window
+    private void requireSlotInWindow(Event event, TimeInterval slot) {
+        LocalDate day = slot.getDate();
+        if (day.isBefore(event.getWindowStart()) || day.isAfter(event.getWindowEnd())) {
+            throw new ValidationException("slot", "Slot must be inside the event's date window");
+        }
+    }
+
+    //the slot must start and end inside the opening hours
+    private void requireSlotInOpeningHours(TimeInterval slot) {
+        if (slot.getStart().isBefore(Room.OPEN) || slot.getEnd().isAfter(Room.CLOSE)) {
+            throw new ValidationException("slot", "Slot must be within opening hours, 8:00 to 22:00");
+        }
+    }
+
+    //the room must have space for every invitee
+    private void requireRoomHoldsInvitees(Event event, Room room) {
+        if (!room.canHold(event.getInviteeIds().size())) {
+            throw new ValidationException("roomId", "Room is too small for the invitees");
+        }
+    }
+
+    //the room must have every feature the event requires
+    private void requireRoomHasFeatures(Event event, Room room) {
+        if (!room.hasAll(event.getRequiredFeatures())) {
+            throw new ValidationException("roomId", "Room is missing a required feature");
+        }
+    }
+
+    //no other scheduled event may use this room at an overlapping time
+    private void requireRoomFree(Room room, TimeInterval slot) {
+        for (Event other : data.getEvents().values()) {
+            boolean sameRoom = room.getId().equals(other.getRoomId());
+            boolean scheduled = other.getStatus() == EventStatus.SCHEDULED;
+            if (scheduled && sameRoom && slot.overlaps(other.getSlot())) {
+                throw new ValidationException("roomId", "Room is already booked at that time");
+            }
+        }
+    }
+
+    //true if the student's saved availability fully covers the slot
+    private boolean isAvailable(String studentId, TimeInterval slot) {
+        StudentAvailability saved = data.getAvailability().get(studentId);
+        return saved != null && saved.covers(slot);
+    }
+
+    //true if the student ACCEPTED another scheduled event that overlaps this slot
+    private boolean hasAcceptedConflict(String studentId, TimeInterval slot) {
+        for (Event other : data.getEvents().values()) {
+            boolean scheduled = other.getStatus() == EventStatus.SCHEDULED;
+            boolean invited = other.getInviteeIds().contains(studentId);
+            if (scheduled && invited
+                    && Event.ACCEPTED.equals(other.responseOf(studentId))
+                    && slot.overlaps(other.getSlot())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //at least minAttendance invitees must pass the shared eligibility rule
+    private void requireEnoughEligible(Event event, TimeInterval slot) {
+        int eligible = 0;
+        for (String studentId : event.getInviteeIds()) {
+            if (rule.ineligibleReason(event, studentId, slot) == null) {
+                eligible++;
+            }
+        }
+        if (eligible < event.getMinAttendance()) {
+            throw new ValidationException("slot", "Not enough eligible invitees for this time");
+        }
+    }
+
+    //a slot must be given
+    private void requireSlot(TimeInterval slot) {
+        if (slot == null) {
+            throw new ValidationException("slot", "Slot is required");
+        }
     }
 
     //all events sorted by id, as a new list each time; empty is fine
