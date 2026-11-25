@@ -497,6 +497,8 @@ public class Main {
             System.out.println("2. View all events");
             System.out.println("3. Find event by ID");
             System.out.println("4. Edit draft event");
+            System.out.println("5. Confirm event (choose room and time)");
+            System.out.println("6. Cancel event");
             System.out.println("0. Back to main menu");
             System.out.print("Select an option: ");
 
@@ -514,6 +516,12 @@ public class Main {
                     break;
                 case "4":
                     editDraftEvent();
+                    break;
+                case "5":
+                    confirmEvent();
+                    break;
+                case "6":
+                    cancelEvent();
                     break;
                 case "0":
                     managing = false;
@@ -580,6 +588,41 @@ public class Main {
             displayEvent(updatedEvent);
         } catch (RuntimeException e) {
             System.out.println("Could not edit draft event: " + e.getMessage());
+        }
+    }
+
+    private void confirmEvent() {
+        System.out.print("Enter the ID of the event to confirm: ");
+        String id = scanner.nextLine().trim();
+
+        System.out.print("Enter the room ID: ");
+        String roomId = scanner.nextLine().trim();
+
+        try {
+            TimeInterval slot = readTimeInterval();
+            Event event = eventPlanningService.confirm(id, roomId, slot);
+
+            System.out.println("Event confirmed:");
+            displayEvent(event);
+        } catch (RuntimeException e) {
+            System.out.println("Could not confirm event: " + e.getMessage());
+        }
+    }
+
+    private void cancelEvent() {
+        System.out.print("Enter the ID of the event to cancel: ");
+        String id = scanner.nextLine().trim();
+
+        try {
+            System.out.print("Cancel this event? (y/n): ");
+            boolean confirmed = scanner.nextLine().trim().equalsIgnoreCase("y");
+
+            Event event = eventPlanningService.cancel(id,confirmed);
+
+            System.out.println("Event cancelled:");
+            displayEvent(event);
+        } catch (RuntimeException e) {
+            System.out.println("Could not cancel event: " + e.getMessage());
         }
     }
 
