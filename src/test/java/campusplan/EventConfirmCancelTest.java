@@ -3,6 +3,7 @@ package campusplan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import campusplan.error.NotFoundException;
 import campusplan.error.ValidationException;
 
 import campusplan.domain.CampusPlanData;
@@ -92,6 +93,13 @@ class EventConfirmCancelTest {
 
         //s1 and s2 are busy at SLOT, so only s3 is eligible and the minimum is 2
         assertThrows(ValidationException.class, () -> service.confirm(draft.getId(), "R1", SLOT));
+        assertStillDraft();
+    }
+
+    @Test
+    void confirmFailsWhenRoomDoesNotExist() {
+        //a missing room is a NotFoundException, not a broken rule
+        assertThrows(NotFoundException.class, () -> service.confirm(draft.getId(), "R99", SLOT));
         assertStillDraft();
     }
 }
