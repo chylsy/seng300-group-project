@@ -27,6 +27,7 @@ public class EventPlanningService {
     private static final Comparator<Event> BY_ID = Comparator.comparing(Event::getId);
     private final CampusPlanData data;
     private final IdGenerator idGenerator;
+    private final EligibilityRule rule;
 
     //normal use: ids come from the team's UUID generator
     public EventPlanningService(CampusPlanData data) {
@@ -37,6 +38,7 @@ public class EventPlanningService {
     public EventPlanningService(CampusPlanData data, IdGenerator idGenerator) {
         this.data = Objects.requireNonNull(data, "data");
         this.idGenerator = Objects.requireNonNull(idGenerator, "idGenerator");
+        this.rule = new AvailabilityEligibilityRule(data);
     }
 
     //makes a new DRAFT event, or throws if any rule E1-E7 fails
@@ -170,11 +172,11 @@ public class EventPlanningService {
         return false;
     }
 
-    //at least minAttendance invitees must be available and free of accepted conflicts
+    //at least minAttendance invitees must pass the shared eligibility rule
     private void requireEnoughEligible(Event event, TimeInterval slot) {
         int eligible = 0;
         for (String studentId : event.getInviteeIds()) {
-            if (isAvailable(studentId, slot) && !hasAcceptedConflict(studentId, slot)) {
+            if (rule.ineligibleReason(event, studentId, slot) == null) {
                 eligible++;
             }
         }
