@@ -9,11 +9,16 @@ import campusplan.domain.EventDraftRequest;
 import campusplan.domain.Room;
 import campusplan.domain.Student;
 import campusplan.domain.StudentAvailability;
+import campusplan.domain.Suggestion;
+import campusplan.domain.SuggestionResult;
 import campusplan.domain.TimeInterval;
 import campusplan.service.AvailabilityEligibilityRule;
 import campusplan.service.EventPlanningService;
+import campusplan.service.SuggestionGenerator;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -72,6 +77,12 @@ import java.util.Set;
         other.getResponses().put(studentId, response);
         return other;
     }
+    
+    private static void assertSameSlot(TimeInterval expected, TimeInterval actual) {
+    assertEquals(expected.getDate(), actual.getDate());
+    assertEquals(expected.getStart(), actual.getStart());
+    assertEquals(expected.getEnd(), actual.getEnd());
+}
 
     @Test
     void availabilityCoveringTheSlotIsEligible() {
@@ -137,6 +148,85 @@ import java.util.Set;
         freeAllDay("s1", "s2");
         scheduled(List.of("s1", "s2"), slot(14, 0, 15, 0), "s1", Event.ACCEPTED);
         assertNull(rule.ineligibleReason(meeting, "s1", slot(13, 0, 14, 0)));
+    }
+    //DECLINED/PENDING does not block
+    @Test
+    void declinedOverlappingEventDoesNotBlock() {
+        freeAllDay("s1", "s2");
+        scheduled(List.of("s1", "s2"), slot(13, 0, 14, 0), "s1", "DECLINED");
+        assertNull(rule.ineligibleReason(meeting, "s1", slot(13, 0, 14, 0)));
+    }
+
+    @Test
+    void pendingOverlappingEventDoesNotBlock() {
+        freeAllDay("s1", "s2");
+        scheduled(List.of("s1", "s2"), slot(13, 0, 14, 0), "s1", Event.PENDING);
+        assertNull(rule.ineligibleReason(meeting, "s1", slot(13, 0, 14, 0)));
+    }
+
+    @Test
+    void cancelledEventFreesTheStudentsTime() {
+        freeAllDay("s1", "s2");
+        Event other = scheduled(List.of("s1", "s2"), slot(13, 0, 14, 0), "s1", Event.ACCEPTED);
+        service.cancel(other.getId(), true);
+        assertNull(rule.ineligibleReason(meeting, "s1", slot(13, 0, 14, 0)));
+    }
+
+    @Test
+    void scheduledEventTheStudentIsNotInvitedToIsIgnored() {
+        freeAllDay("s1", "s2", "s3");
+        scheduled(List.of("s2", "s3"), slot(13, 0, 14, 0), "s2", Event.ACCEPTED);
+        assertNull(rule.ineligibleReason(meeting, "s1", slot(13, 0, 14, 0)));
+    }
+
+    @Test
+    void EventDoesNotConflictWithItself() {
+        freeAllDay("s1", "s2");
+        Event event = scheduled(List.of("s1", "s2"), slot(13, 0, 14, 0), "s1", Event.ACCEPTED);
+        assertNull(rule.ineligibleReason(event, "s1", slot(13, 0, 14, 0)));
+    }
+    //rule behaviour tests
+    @Test
+    void theAvailabilityReasonIsGivenWhenBothRulesFail() {
+        free("s1", slot(8, 0, 14, 0));  
+        freeAllDay("s2");
+        scheduled(List.of("s1", "s2"), slot(13, 0, 14, 0), "s1", Event.ACCEPTED);
+        assertEquals(NOT_AVAILABLE, rule.ineligibleReason(meeting, "s1", slot(13, 30, 14, 30)));
+    }
+
+    @Test
+    void checkingChangesNothing() {
+    freeAllDay("s1", "s2");
+    Event other = scheduled(List.of("s1", "s2"), slot(13, 0, 14, 0), "s1", Event.ACCEPTED);
+    rule.ineligibleReason(meeting, "s1", slot(13, 0, 14, 0));
+    assertEquals(Event.ACCEPTED, other.responseOf("s1"));
+    assertSameSlot(slot(13, 0, 14, 0), other.getSlot());
+    assertNull(meeting.getSlot());
+    assertEquals(2, data.getEvents().size());
+}
+
+    //test rule inside SuggestionGenerator: 6 students, the last student has no availability
+    @Test
+    void RuleNamesTheEligibleStudentsAndGivesTheIneligibleStudentReason() {
+        List<String> six = new ArrayList<>();
+        for (int i = 1; i <= 6; i++) {
+            String id = "p" + i;
+            six.add(id);
+            data.getStudents().put(id, new Student(id, id, id + "@ucalgary.ca"));
+            if (i <= 5) {
+                free(id, slot(10, 0, 12, 0));
+            }
+        }
+        Event event = service.createDraft(new EventDraftRequest("Project meeting", six, DAY, DAY, 120, Set.of(), 4));
+
+        SuggestionResult result = new SuggestionGenerator(data, rule).generate(event);
+
+        assertEquals(1, result.getTop().size());
+        Suggestion only = result.getTop().get(0);
+        assertSameSlot(slot(10, 0, 12, 0), only.getSlot());
+        assertEquals(six.subList(0, 5), only.getEligibleIds());
+        assertEquals(List.of("p6"), new ArrayList<>(only.getIneligibleReasons().keySet()));
+        assertEquals(NOT_AVAILABLE, only.getIneligibleReasons().get("p6"));
     }
 
 
