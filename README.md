@@ -96,6 +96,8 @@ Dependencies point downward: the CLI calls services, services use the domain mod
 
 ## Known Limitations
 
-- P2 features (scheduling suggestions, confirm/cancel, attendance responses, roster export, undo/redo) are in progress.
+- Scheduling suggestions (FR-04) are available from **4. Manage draft events → 5. Get scheduling suggestions**.
+- Confirm/cancel (FR-05) is implemented in the service layer but does not have a CLI menu option yet.
+- Attendance responses (FR-06), event listing and roster export (FR-07) and undo/redo (FR-08) are in progress.
 - Data is only saved when the user chooses to save.
 - The command-line interface is English only.
