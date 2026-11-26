@@ -28,6 +28,10 @@ import campusplan.service.EventPlanningService;
 import campusplan.service.RoomCatalogService;
 import campusplan.service.StorageService;
 import campusplan.service.StudentService;
+import campusplan.domain.Suggestion;
+import campusplan.domain.SuggestionResult;
+import campusplan.service.SchedulingService;
+import campusplan.service.AvailabilityEligibilityRule;
 
 public class Main {
     private final Scanner scanner;
@@ -35,6 +39,7 @@ public class Main {
     private final RoomCatalogService roomCatalogService;
     private final AvailabilityService availabilityService;
     private final EventPlanningService eventPlanningService;
+    private final SchedulingService schedulingService;
 
 
     /** Where the app's data is saved between runs (as per FR-03) */
@@ -52,6 +57,7 @@ public class Main {
         roomCatalogService   = new RoomCatalogService(data);
         availabilityService  = new AvailabilityService(data);
         eventPlanningService = new EventPlanningService(data);
+        schedulingService = new SchedulingService(data, new AvailabilityEligibilityRule(data));
     }
 
     public static void main(String[] args) {
@@ -497,6 +503,7 @@ public class Main {
             System.out.println("2. View all events");
             System.out.println("3. Find event by ID");
             System.out.println("4. Edit draft event");
+            System.out.println("5. Get scheduling suggestions");
             System.out.println("0. Back to main menu");
             System.out.print("Select an option: ");
 
@@ -514,6 +521,9 @@ public class Main {
                     break;
                 case "4":
                     editDraftEvent();
+                    break;
+                case "5":
+                    showSuggestions();
                     break;
                 case "0":
                     managing = false;
@@ -581,6 +591,57 @@ public class Main {
         } catch (RuntimeException e) {
             System.out.println("Could not edit draft event: " + e.getMessage());
         }
+    }
+    private void showSuggestions() {
+        System.out.print("Enter the ID of the event to get suggestions for: ");
+        String id = scanner.nextLine().trim();
+
+        try {
+            SuggestionResult result = schedulingService.suggest(id);
+            List<Suggestion> top = result.getTop();
+
+            System.out.println("\n=== Suggestions for " + id + " ===");
+            if (top.isEmpty()) {
+                System.out.println("No suggestion meets the room and attendance requirements.");
+            }
+
+            int number = 1;
+            for (Suggestion s : top) {
+                System.out.println("\n" + number++ + ". Room " + s.getRoomId() + ", " + describeSlot(s.getSlot()));
+                System.out.println("   Eligible (" + s.getEligibleIds().size() + "): "
+                        + describeStudents(s.getEligibleIds()));
+                if (s.getIneligibleReasons().isEmpty()) {
+                    System.out.println("   Ineligible: none");
+                } else {
+                    System.out.println("   Ineligible:");
+                    s.getIneligibleReasons().forEach((studentId, reason) ->
+                            System.out.println("   - " + describeStudent(studentId) + ": " + reason));
+                }
+            }
+
+            System.out.println("\nRejected for room constraints: " + result.getRejectedForRoom());
+            System.out.println("Rejected for insufficient attendance: " + result.getRejectedForAttendance());
+        } catch (CampusPlanException e) {
+            System.out.println("Could not get suggestions: " + e.getMessage());
+        }
+    }
+
+    private String describeStudent(String studentId) {
+        try {
+            return studentService.get(studentId).getName();
+        } catch (NotFoundException e) {
+            return studentId;
+        }
+    }
+    private String describeSlot(TimeInterval slot) {
+        return slot.getDate() + " " + slot.getStart() + "-" + slot.getEnd();
+    }
+    private String describeStudents(List<String> studentIds) {
+        List<String> names = new ArrayList<>();
+        for (String studentId : studentIds) {
+            names.add(describeStudent(studentId));
+        }
+        return String.join(", ", names);
     }
 
     private EventDraftRequest readEventDraftRequest() {
