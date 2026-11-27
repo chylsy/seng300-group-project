@@ -688,8 +688,8 @@ public class Main {
 
         try {
             TimeInterval slot = readTimeInterval();
-            Event event = eventPlanningService.confirm(id, roomId, slot);
-
+            Event event = history.run("Confirm event", () -> eventPlanningService.confirm(id, roomId, slot));
+            
             System.out.println("Event confirmed:");
             displayEvent(event);
         } catch (RuntimeException e) {
@@ -705,7 +705,7 @@ public class Main {
             System.out.print("Cancel this event? (y/n): ");
             boolean confirmed = scanner.nextLine().trim().equalsIgnoreCase("y");
 
-            Event event = eventPlanningService.cancel(id, confirmed);
+            Event event = history.run("Cancel event", () -> eventPlanningService.cancel(id, confirmed));
 
             System.out.println("Event cancelled:");
             displayEvent(event);
@@ -729,11 +729,8 @@ public class Main {
 
             String response = scanner.nextLine().trim().toUpperCase();
 
-            attendanceService.recordResponse(
-                    eventId,
-                    studentId,
-                    response);
-
+            history.run("Record attendance response", () -> attendanceService.recordResponse(eventId, studentId, response));
+            
             System.out.println(
                     "Response recorded successfully.");
 
