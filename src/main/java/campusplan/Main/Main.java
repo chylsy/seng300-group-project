@@ -17,15 +17,22 @@ import campusplan.domain.IdGenerator;
 import campusplan.domain.Room;
 import campusplan.domain.RoomFeature;
 import campusplan.domain.Student;
+import campusplan.domain.Suggestion;
+import campusplan.domain.SuggestionResult;
 import campusplan.domain.TimeInterval;
 import campusplan.domain.UuidIdGenerator;
 import campusplan.error.CampusPlanException;
 import campusplan.error.DuplicateEmailException;
 import campusplan.error.NotFoundException;
+import campusplan.error.ValidationException;
 import campusplan.persistence.JsonDataStore;
-import campusplan.service.*;
-import campusplan.domain.Suggestion;
-import campusplan.domain.SuggestionResult;
+import campusplan.service.AvailabilityEligibilityRule;
+import campusplan.service.AvailabilityService;
+import campusplan.service.EventPlanningService;
+import campusplan.service.RoomCatalogService;
+import campusplan.service.SchedulingService;
+import campusplan.service.StorageService;
+import campusplan.service.StudentService;
 
 public class Main {
     private final Scanner scanner;
@@ -34,7 +41,6 @@ public class Main {
     private final AvailabilityService availabilityService;
     private final EventPlanningService eventPlanningService;
     private final SchedulingService schedulingService;
-    private final AttendanceService attendanceService;
 
 
     /** Where the app's data is saved between runs (as per FR-03) */
@@ -53,8 +59,6 @@ public class Main {
         availabilityService  = new AvailabilityService(data);
         eventPlanningService = new EventPlanningService(data);
         schedulingService = new SchedulingService(data, new AvailabilityEligibilityRule(data));
-        attendanceService = new AttendanceService(data);
-
     }
 
     public static void main(String[] args) {
@@ -100,7 +104,7 @@ public class Main {
         }
     }
 
-        public void run() {
+    public void run() {
         boolean running = true;
 
         while (running) {
@@ -421,7 +425,7 @@ public class Main {
             availabilityService.addAvailability(studentId, interval);
 
             System.out.println("Availability added successfully.");
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {            
             System.out.println("Could not add availability: " + e.getMessage());
         }
     }
@@ -437,7 +441,7 @@ public class Main {
             availabilityService.removeAvailability(studentId, interval);
 
             System.out.println("Availability removed successfully.");
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {            
             System.out.println("Could not remove availability: " + e.getMessage());
         }
     }
@@ -458,7 +462,7 @@ public class Main {
             } else {
                 System.out.println("The student is not available for this interval.");
             }
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {
             System.out.println("Could not check availability: " + e.getMessage());
         }
     }
@@ -503,8 +507,6 @@ public class Main {
             System.out.println("5. Get scheduling suggestions");
             System.out.println("6. Confirm event (choose room and time)");
             System.out.println("7. Cancel event");
-            System.out.println("8. Record attendance response");
-            System.out.println("9. View attendance responses");
             System.out.println("0. Back to main menu");
             System.out.print("Select an option: ");
 
@@ -531,13 +533,6 @@ public class Main {
                     break;
                 case "7":
                     cancelEvent();
-                    break;
-                case "8":
-                    recordAttendanceResponse();
-                    break;
-
-                case "9":
-                    viewAttendanceResponses();
                     break;
                 case "0":
                     managing = false;
@@ -690,73 +685,6 @@ public class Main {
             displayEvent(event);
         } catch (RuntimeException e) {
             System.out.println("Could not cancel event: " + e.getMessage());
-        }
-    }
-
-    private void recordAttendanceResponse() {
-
-        try {
-
-            System.out.print("Event ID: ");
-            String eventId = scanner.nextLine().trim();
-
-            System.out.print("Student ID: ");
-            String studentId = scanner.nextLine().trim();
-
-            System.out.print(
-                    "Response (PENDING, ACCEPTED, DECLINED): ");
-
-            String response =
-                    scanner.nextLine()
-                            .trim()
-                            .toUpperCase();
-
-            attendanceService.recordResponse(
-                    eventId,
-                    studentId,
-                    response);
-
-            System.out.println(
-                    "Response recorded successfully.");
-
-        } catch (RuntimeException e) {
-
-            System.out.println(
-                    "Could not record response: "
-                            + e.getMessage());
-        }
-    }
-
-    private void viewAttendanceResponses() {
-
-        try {
-
-            System.out.print("Event ID: ");
-            String eventId = scanner.nextLine().trim();
-
-            Event event =
-                    eventPlanningService.get(eventId);
-
-            System.out.println(
-                    "\nResponses for event: "
-                            + event.getTitle());
-
-            event.getResponses().forEach(
-                    (studentId, response) ->
-                            System.out.println(
-                                    describeStudent(studentId)
-                                            + " -> "
-                                            + response));
-
-            System.out.println(
-                    "\nAccepted count: "
-                            + attendanceService.acceptedCount(eventId));
-
-        } catch (RuntimeException e) {
-
-            System.out.println(
-                    "Could not view responses: "
-                            + e.getMessage());
         }
     }
 
