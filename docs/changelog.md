@@ -11,6 +11,13 @@
 - Added the "Get scheduling suggestions" option to the draft events menu in the console UI. ([#30](https://github.com/chylsy/seng300-group-project/issues/30))
 - Added `Event.schedule(roomId, slot)`, which moves a DRAFT to SCHEDULED. ([#30](https://github.com/chylsy/seng300-group-project/issues/30))
 
+**FR-04: Eligibility rule** (Nadine)
+-Added 'AvailabilityEligibilityRule' the 'EligibilityRUle' implementation used by the 'SuggestionGenerator'. A student is eligible for a slot only if their availability covers the entire slotand they have not accepted another SHEDULED event that overlaps it.'ineligibleReason(event, studentId, slot)' returns null for ineligible students otherwise it returns 'not available at that time' or 'already accepted another event at that time'.availability is checked first([#36]https://github.com/chylsy/seng300-group-project/commit/253f0b43cea39c9ad7791e40518f9d0f9f57ac66)
+-Time slots are halp open so events that are back to back do not conflict. PENDING or DECLINED response, cancelled events, events the student is not invited to, and the event being planned do not make a student ineligible. Eligibility check does not modify any data. ([#36]https://github.com/chylsy/seng300-group-project/commit/253f0b43cea39c9ad7791e40518f9d0f9f57ac66)
+- Added 'EligibilityAvailabilityRuleTest' with 18 unit tests covering AC-04-13 to AC-04-22. Reason is reported when both checks fail and the 5/6 eligible student case run on 'SuggestionGenerator' ([#36]https://github.com/chylsy/seng300-group-project/commit/253f0b43cea39c9ad7791e40518f9d0f9f57ac66)
+- Added the FR-04 eligibility rows to traceability.csv ([#42]https://github.com/chylsy/seng300-group-project/commit/4348dd5095dd7cd53db8c3327f24ede24ad470d4)
+
+
 **FR-05: Confirm and cancel** (Mckenzie)
 - Added `EventPlanningService.confirm(eventId, roomId, slot)`, which first checks that the event is a DRAFT, 
   the room exists and is free, the time fits the event, and enough invitees are available, and only then moves the event to SCHEDULED. ([#8](https://github.com/chylsy/seng300-group-project/issues/8), [PR #36](https://github.com/chylsy/seng300-group-project/pull/36))
@@ -35,8 +42,6 @@
 - Added `CommandHistoryTest` for history capacity, failed changes, redo after undo, and restoring a room reservation and attendance responses after saving and restarting.
 - Added `sample-data/p2-baseline.json` as the P2 sample dataset for migration testing.
 
-**FR-04: Eligibility rule** (Nadine)
-- TODO: name of the class implementing `EligibilityRule`, plus issue link.
 
 ### Design changes
 
