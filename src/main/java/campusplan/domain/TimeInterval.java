@@ -87,6 +87,15 @@ public class TimeInterval {
         return (int) ChronoUnit.MINUTES.between(this.start, this.end);
     }
 
+    /**
+     * Returns a readable form of the interval, e.g. "2026-11-02 10:00-12:00"
+     * @return  - The interval as text
+     */
+    @Override
+    public String toString() {
+        return date + " " + start + "-" + end;
+    }
+
     /* Accessor (Getter) Methods */
 
     public LocalDate getDate() {
