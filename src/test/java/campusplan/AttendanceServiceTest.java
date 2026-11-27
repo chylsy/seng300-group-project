@@ -13,6 +13,9 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests for AttendanceService.java ; FR 06
+ */
 class AttendanceServiceTest {
 
     private CampusPlanData data;
@@ -30,7 +33,7 @@ class AttendanceServiceTest {
 
         attendanceService = new AttendanceService(data);
 
-        // create students
+        // create test students
 
         student1 = new Student(
                 "S1",
@@ -243,7 +246,7 @@ class AttendanceServiceTest {
                 "S1",
                 Event.PENDING);
 
-        // Now acceptance should succeed
+        // Acceptance should succeed now
 
         assertDoesNotThrow(
                 () -> attendanceService.recordResponse(
@@ -292,7 +295,7 @@ class AttendanceServiceTest {
                 secondEvent.getId(),
                 secondEvent);
 
-        // Verify overlap causes rejection
+        // Verify that overlap causes rejection
 
         assertThrows(
                 ValidationException.class,
@@ -308,7 +311,7 @@ class AttendanceServiceTest {
                 "S1",
                 Event.DECLINED);
 
-        // Now Event B should be allowed
+        // Event B should be allowed now
 
         assertDoesNotThrow(
                 () -> attendanceService.recordResponse(
