@@ -31,7 +31,9 @@
 - TODO: summary and issue link.
 
 **FR-08: Undo and redo** (Parth)
-- TODO: summary and issue link.
+- Added `u` and `r` to undo and redo the last 20 successful changes in the current session. A new successful change clears the redo history, and a failed change preserves it. [#11](https://github.com/chylsy/seng300-group-project/issues/11)
+- Added `CommandHistoryTest` for history capacity, failed changes, redo after undo, and restoring a room reservation and attendance responses after saving and restarting.
+- Added `sample-data/p2-baseline.json` as the P2 sample dataset for migration testing.
 
 **FR-04: Eligibility rule** (Nadine)
 - TODO: name of the class implementing `EligibilityRule`, plus issue link.
@@ -41,7 +43,7 @@
 - Added the `EligibilityRule` interface (`ineligibleReason(Event, String, TimeInterval)`), so suggestion logic does not depend on the concrete rule and can be tested with a stub. 
 - Added the planned P2 classes `Suggestion`, `SuggestionResult`, `SuggestionGenerator` and `SchedulingService` to the class diagram. `EligibilityRule` and its implementation were not in the P1 diagram.
 - Updated the class diagram to replace the planned `AttendanceService` placeholder with the delivered implementation, including its dependency on `CampusPlanData`.
-- TODO (Parth): Command pattern classes for undo/redo.
+- Implemented FR-08 using the Command pattern. `CommandHistory` manages the undo and redo stacks, and `SnapshotCommand` implements `Command` by capturing the application state before and after each successful change.
 - TODO (All): any changes made to UMl, add them here
 
 ### Resolved defects
@@ -53,3 +55,4 @@
 - Corrected attendance conflict handling so overlapping accepted commitments are rejected.
 - Corrected attendance commitment handling so PENDING and DECLINED responses release previously accepted reservations.
 - Added FR-01,FR-02,FR-03 to requirements.pdf which were missing from P1
+- Fixed JSON loading so saved events retain their status, room, time slot, and attendance responses after restarting.
