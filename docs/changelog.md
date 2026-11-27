@@ -18,7 +18,14 @@
 - Added "Confirm event" and "Cancel event" to the draft events menu in the console UI (options 6 and 7). ([#8](https://github.com/chylsy/seng300-group-project/issues/8))
 
 **FR-06: Attendance responses** (Sara)
-- TODO: summary and issue link.
+
+- Added `AttendanceService`, providing attendance-response operations for scheduled events, including recording and validating PENDING, ACCEPTED, and DECLINED responses. (https://github.com/chylsy/seng300-group-project/commit/ab8ba60d309a9990c7b460ba9dbdced4f901ba0e)
+- Implemented attendance validation rules that reject ACCEPTED responses when the student is unavailable for the full event interval. 
+- Implemented attendance conflict detection that prevents a student from ACCEPTING overlapping scheduled events. 
+- Added support for releasing commitments by changing an ACCEPTED response to PENDING or DECLINED. 
+- Added attendance-response functionality to the console UI through new menu options for recording and viewing responses. 
+- Added `AttendanceServiceTest` with automated tests covering: valid ACCEPTED responses, unavailable students, overlapping accepted events, accepted-attendance counts, PENDING releasing conflicts, DECLINED releasing conflicts. (https://github.com/chylsy/seng300-group-project/commit/6b7989a5dcc3fc79ab863e6ef01bdc1bf4477238)
+- Added comments and documentation to `AttendanceService` and `AttendanceServiceTest` to improve maintainability and explain business rules. 
 
 **FR-07: Event list and roster CSV export** (Favour)
 - TODO: summary and issue link.
@@ -33,6 +40,7 @@
 
 - Added the `EligibilityRule` interface (`ineligibleReason(Event, String, TimeInterval)`), so suggestion logic does not depend on the concrete rule and can be tested with a stub. 
 - Added the planned P2 classes `Suggestion`, `SuggestionResult`, `SuggestionGenerator` and `SchedulingService` to the class diagram. `EligibilityRule` and its implementation were not in the P1 diagram.
+- Updated the class diagram to replace the planned `AttendanceService` placeholder with the delivered implementation, including its dependency on `CampusPlanData`.
 - TODO (Parth): Command pattern classes for undo/redo.
 - TODO (All): any changes made to UMl, add them here
 
@@ -40,3 +48,7 @@
 
 - TODO: list your defects here
 - Corrected `traceability.csv` rows that pointed to tests that did not exist, and updated the issue numbers for the Room and FR-04 rows.
+- Added traceability mappings for FR-06 acceptance criteria and automated tests.
+- Corrected attendance validation so unavailable students cannot ACCEPT scheduled events.
+- Corrected attendance conflict handling so overlapping accepted commitments are rejected.
+- Corrected attendance commitment handling so PENDING and DECLINED responses release previously accepted reservations.
