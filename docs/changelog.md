@@ -35,7 +35,9 @@
 - Added comments and documentation to `AttendanceService` and `AttendanceServiceTest` to improve maintainability and explain business rules. 
 
 **FR-07: Event list and roster CSV export** (Favour)
-- TODO: summary and issue link.
+- Added `EventRosterService` with `listAll()` (sorted by window-start date then ID), `listByStatus(EventStatus)`, `get(eventId)`, and `exportRosterCsv(eventId)` which produces a UTF-8 CSV with header `student_id,name,email,response` and RFC 4180-compliant quoting of commas, double-quotes, and newlines.
+- Added menu option **6 — Event list and roster** to the console UI with four sub-options: list all events, filter by status, show event detail with per-invitee responses, and print the CSV roster to stdout.
+- Added `EventRosterServiceTest` with 16 automated unit tests covering all AC-07-01 to AC-07-16 (sorting, status filtering, detail retrieval, CSV header, one-row-per-invitee, default PENDING response, comma/quote/newline quoting, and NotFoundException on bad IDs).
 
 **FR-08: Undo and redo** (Parth)
 - Added `u` and `r` to undo and redo the last 20 successful changes in the current session. A new successful change clears the redo history, and a failed change preserves it. [#11](https://github.com/chylsy/seng300-group-project/issues/11)
