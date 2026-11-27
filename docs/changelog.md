@@ -27,7 +27,11 @@
 - TODO: summary and issue link.
 
 **FR-04: Eligibility rule** (Nadine)
-- TODO: name of the class implementing `EligibilityRule`, plus issue link.
+- Added `AvailabilityEligibilityRule`, an implementation of `EligibilityRule` used by `SuggestionGenerator`. A student is eligible for a slot when their saved availability covers the whole slot and they have no ACCEPTED attendance at another SCHEDULED event that overlaps it. `ineligibleReason(event, studentId, slot)` returns `null` when the student can attend; otherwise it returns "not available at that time" or "already accepted another event at that time", and the availability check runs first. ([#36](https://github.com/chylsy/seng300-group-project/commit/253f0b43cea39c9ad7791e40518f9d0f9f57ac66))
+- Intervals are half-open, so back-to-back events don't conflict. PENDING and DECLINED responses, cancelled events, events the student isn't invited to, and the event being planned itself don't block the student. Checking eligibility never changes any data. ([#36](https://github.com/chylsy/seng300-group-project/commit/253f0b43cea39c9ad7791e40518f9d0f9f57ac66))
+- Added `AvailabilityEligibilityRuleTest`, with 18 unit tests covering AC-04-13 to AC-04-22, the reason order when both checks fail (AC-04-12), and the five-of-six-eligible case run through `SuggestionGenerator` (AC-04-01). ([#36]())
+- Added the matching FR-04 rows to `traceability.csv`. ([#42](https://github.com/chylsy/seng300-group-project/commit/4348dd5095dd7cd53db8c3327f24ede24ad470d4))
+
 
 ### Design changes
 
@@ -40,3 +44,4 @@
 
 - TODO: list your defects here
 - Corrected `traceability.csv` rows that pointed to tests that did not exist, and updated the issue numbers for the Room and FR-04 rows.
+- Added FR-01,FR-02,FR-03 to requirements.pdf which were missing from P1
