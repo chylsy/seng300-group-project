@@ -29,6 +29,7 @@ import campusplan.persistence.JsonDataStore;
 import campusplan.service.AvailabilityEligibilityRule;
 import campusplan.service.AvailabilityService;
 import campusplan.service.EventPlanningService;
+import campusplan.service.EventRosterService;
 import campusplan.service.RoomCatalogService;
 import campusplan.service.SchedulingService;
 import campusplan.service.StorageService;
@@ -44,7 +45,7 @@ public class Main {
     private final EventPlanningService eventPlanningService;
     private final SchedulingService schedulingService;
     private final AttendanceService attendanceService;
-
+    private final EventRosterService eventRosterService;
 
     /** Where the app's data is saved between runs (as per FR-03) */
     private static final Path DATA_FILE = Path.of("data", "campusplan.json");
@@ -56,14 +57,15 @@ public class Main {
 
     public Main(CampusPlanData data, IdGenerator ids, StorageService storage) {
         history = new CommandHistory(data);
-        scanner              = new Scanner(System.in);
-        this.storage         = storage;
-        studentService       = new StudentService(data, ids);
-        roomCatalogService   = new RoomCatalogService(data);
-        availabilityService  = new AvailabilityService(data);
+        scanner = new Scanner(System.in);
+        this.storage = storage;
+        studentService = new StudentService(data, ids);
+        roomCatalogService = new RoomCatalogService(data);
+        availabilityService = new AvailabilityService(data);
         eventPlanningService = new EventPlanningService(data);
         schedulingService = new SchedulingService(data, new AvailabilityEligibilityRule(data));
         attendanceService = new AttendanceService(data);
+        eventRosterService = new EventRosterService(data);
     }
 
     public static void main(String[] args) {
@@ -73,7 +75,8 @@ public class Main {
         try {
             data = storage.startApp();
         } catch (CampusPlanException e) {
-            // Corrupt or unreadable file: report it and stop, so the file is never overwritten.
+            // Corrupt or unreadable file: report it and stop, so the file is never
+            // overwritten.
             System.out.println("Could not load saved data from " + DATA_FILE + ": " + e.getMessage());
             System.out.println("The file was left unchanged. Fix, move or back it up, then restart.");
             return;
@@ -132,6 +135,9 @@ public class Main {
                     case "4":
                         manageDraftEvents();
                         break;
+                    case "6":
+                        manageEventRoster();
+                        break;
                     case "5":
                         saveData();
                         break;
@@ -162,6 +168,7 @@ public class Main {
         System.out.println("2. View rooms");
         System.out.println("3. Manage availability");
         System.out.println("4. Manage draft events");
+        System.out.println("6. Event list and roster (FR-07)");
         System.out.println("5. Save data");
         System.out.println("u. Undo last change");
         System.out.println("r. Redo last undone change");
@@ -353,12 +360,10 @@ public class Main {
             System.out.println("Leave blank for no feature filter.");
             System.out.print("Features: ");
 
-            Set<RoomFeature> requiredFeatures =
-                    readRoomFeatures(scanner.nextLine().trim());
+            Set<RoomFeature> requiredFeatures = readRoomFeatures(scanner.nextLine().trim());
 
             displayRooms(
-                    roomCatalogService.filter(minCapacity, requiredFeatures)
-            );
+                    roomCatalogService.filter(minCapacity, requiredFeatures));
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid whole number for capacity.");
         } catch (IllegalArgumentException e) {
@@ -372,8 +377,7 @@ public class Main {
         if (!input.isBlank()) {
             for (String featureName : input.split(",")) {
                 features.add(
-                        RoomFeature.valueOf(featureName.trim().toUpperCase())
-                );
+                        RoomFeature.valueOf(featureName.trim().toUpperCase()));
             }
         }
 
@@ -438,7 +442,7 @@ public class Main {
             history.run("Add availability", () -> availabilityService.addAvailability(studentId, interval));
 
             System.out.println("Availability added successfully.");
-        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {            
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {
             System.out.println("Could not add availability: " + e.getMessage());
         }
     }
@@ -454,7 +458,7 @@ public class Main {
             history.run("Remove availability", () -> availabilityService.removeAvailability(studentId, interval));
 
             System.out.println("Availability removed successfully.");
-        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {            
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {
             System.out.println("Could not remove availability: " + e.getMessage());
         }
     }
@@ -467,8 +471,7 @@ public class Main {
             studentService.get(studentId);
             TimeInterval interval = readTimeInterval();
 
-            boolean available =
-                    availabilityService.isAvailable(studentId, interval);
+            boolean available = availabilityService.isAvailable(studentId, interval);
 
             if (available) {
                 System.out.println("The student is available for this interval.");
@@ -493,16 +496,14 @@ public class Main {
 
             if (!end.isAfter(start)) {
                 throw new IllegalArgumentException(
-                        "End time must be after start time."
-                );
+                        "End time must be after start time.");
             }
 
             return new TimeInterval(date, start, end);
 
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(
-                    "Invalid date or time. Use YYYY-MM-DD for the date and HH:MM for times."
-            );
+                    "Invalid date or time. Use YYYY-MM-DD for the date and HH:MM for times.");
         }
     }
 
@@ -623,6 +624,7 @@ public class Main {
             System.out.println("Could not edit draft event: " + e.getMessage());
         }
     }
+
     private void showSuggestions() {
         System.out.print("Enter the ID of the event to get suggestions for: ");
         String id = scanner.nextLine().trim();
@@ -645,8 +647,8 @@ public class Main {
                     System.out.println("   Ineligible: none");
                 } else {
                     System.out.println("   Ineligible:");
-                    s.getIneligibleReasons().forEach((studentId, reason) ->
-                            System.out.println("   - " + describeStudent(studentId) + ": " + reason));
+                    s.getIneligibleReasons().forEach((studentId, reason) -> System.out
+                            .println("   - " + describeStudent(studentId) + ": " + reason));
                 }
             }
 
@@ -664,9 +666,11 @@ public class Main {
             return studentId;
         }
     }
+
     private String describeSlot(TimeInterval slot) {
         return slot.getDate() + " " + slot.getStart() + "-" + slot.getEnd();
     }
+
     private String describeStudents(List<String> studentIds) {
         List<String> names = new ArrayList<>();
         for (String studentId : studentIds) {
@@ -701,7 +705,7 @@ public class Main {
             System.out.print("Cancel this event? (y/n): ");
             boolean confirmed = scanner.nextLine().trim().equalsIgnoreCase("y");
 
-            Event event = eventPlanningService.cancel(id,confirmed);
+            Event event = eventPlanningService.cancel(id, confirmed);
 
             System.out.println("Event cancelled:");
             displayEvent(event);
@@ -709,6 +713,7 @@ public class Main {
             System.out.println("Could not cancel event: " + e.getMessage());
         }
     }
+
     private void recordResponse() {
 
         try {
@@ -722,8 +727,7 @@ public class Main {
             System.out.print(
                     "Response (PENDING, ACCEPTED, DECLINED): ");
 
-            String response =
-                    scanner.nextLine().trim().toUpperCase();
+            String response = scanner.nextLine().trim().toUpperCase();
 
             attendanceService.recordResponse(
                     eventId,
@@ -747,19 +751,17 @@ public class Main {
 
         try {
 
-            Event event =
-                    eventPlanningService.get(eventId);
+            Event event = eventPlanningService.get(eventId);
 
             System.out.println(
                     "\nResponses for "
                             + event.getTitle());
 
             event.getResponses().forEach(
-                    (studentId, response) ->
-                            System.out.println(
-                                    describeStudent(studentId)
-                                            + ": "
-                                            + response));
+                    (studentId, response) -> System.out.println(
+                            describeStudent(studentId)
+                                    + ": "
+                                    + response));
 
         } catch (RuntimeException e) {
             System.out.println(
@@ -788,15 +790,12 @@ public class Main {
             }
         }
 
-        LocalDate windowStart =
-                readDate("Enter event window start date (YYYY-MM-DD): ");
+        LocalDate windowStart = readDate("Enter event window start date (YYYY-MM-DD): ");
 
-        LocalDate windowEnd =
-                readDate("Enter event window end date (YYYY-MM-DD): ");
+        LocalDate windowEnd = readDate("Enter event window end date (YYYY-MM-DD): ");
 
         int durationMinutes = readInteger(
-                "Enter duration in minutes (30-180, in 30-minute increments): "
-        );
+                "Enter duration in minutes (30-180, in 30-minute increments): ");
 
         System.out.println("\nAvailable room features:");
         for (RoomFeature feature : RoomFeature.values()) {
@@ -804,12 +803,10 @@ public class Main {
         }
 
         System.out.println(
-                "Enter required features separated by commas, or leave blank for none."
-        );
+                "Enter required features separated by commas, or leave blank for none.");
         System.out.print("Required features: ");
 
-        Set<RoomFeature> requiredFeatures =
-                readRoomFeatures(scanner.nextLine().trim());
+        Set<RoomFeature> requiredFeatures = readRoomFeatures(scanner.nextLine().trim());
 
         int minAttendance = readInteger("Enter minimum attendance: ");
 
@@ -820,8 +817,7 @@ public class Main {
                 windowEnd,
                 durationMinutes,
                 requiredFeatures,
-                minAttendance
-        );
+                minAttendance);
     }
 
     private LocalDate readDate(String prompt) {
@@ -831,8 +827,7 @@ public class Main {
             return LocalDate.parse(scanner.nextLine().trim());
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(
-                    "Invalid date. Use YYYY-MM-DD."
-            );
+                    "Invalid date. Use YYYY-MM-DD.");
         }
     }
 
@@ -843,8 +838,7 @@ public class Main {
             return Integer.parseInt(scanner.nextLine().trim());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "Please enter a valid whole number."
-            );
+                    "Please enter a valid whole number.");
         }
     }
 
@@ -855,25 +849,144 @@ public class Main {
         System.out.println("Invitee IDs: " + event.getInviteeIds());
         System.out.println(
                 "Date window: " + event.getWindowStart()
-                        + " to " + event.getWindowEnd()
-        );
+                        + " to " + event.getWindowEnd());
         System.out.println(
-                "Duration: " + event.getDurationMinutes() + " minutes"
-        );
+                "Duration: " + event.getDurationMinutes() + " minutes");
         System.out.println(
-                "Required room features: " + event.getRequiredFeatures()
-        );
+                "Required room features: " + event.getRequiredFeatures());
         System.out.println(
-                "Minimum attendance: " + event.getMinAttendance()
-        );
+                "Minimum attendance: " + event.getMinAttendance());
         System.out.println(
                 "Room ID: " + (event.getRoomId() == null
-                        ? "Not assigned" : event.getRoomId())
-        );
+                        ? "Not assigned"
+                        : event.getRoomId()));
         System.out.println(
                 "Scheduled slot: " + (event.getSlot() == null
-                        ? "Not scheduled" : event.getSlot())
-        );
+                        ? "Not scheduled"
+                        : event.getSlot()));
+    }
+
+    // ==================== EVENT ROSTER (FR-07) ====================
+
+    private void manageEventRoster() {
+        boolean managing = true;
+
+        while (managing) {
+            System.out.println("\n=== Event List & Roster ===");
+            System.out.println("1. List all events");
+            System.out.println("2. List events by status");
+            System.out.println("3. Show event details");
+            System.out.println("4. Export event roster as CSV");
+            System.out.println("0. Back to main menu");
+            System.out.print("Select an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    listAllEvents();
+                    break;
+                case "2":
+                    listEventsByStatus();
+                    break;
+                case "3":
+                    showEventDetail();
+                    break;
+                case "4":
+                    exportRosterCsv();
+                    break;
+                case "0":
+                    managing = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Try again.");
+            }
+        }
+    }
+
+    private void listAllEvents() {
+        java.util.List<Event> events = eventRosterService.listAll();
+        System.out.println("\n=== All Events (sorted by date) ===");
+        if (events.isEmpty()) {
+            System.out.println("No events found.");
+            return;
+        }
+        for (Event event : events) {
+            printEventSummary(event);
+        }
+    }
+
+    private void listEventsByStatus() {
+        System.out.println("Select status: 1=DRAFT  2=SCHEDULED  3=CANCELLED");
+        System.out.print("Status: ");
+        String choice = scanner.nextLine().trim();
+        campusplan.domain.EventStatus status;
+        switch (choice) {
+            case "1":
+                status = campusplan.domain.EventStatus.DRAFT;
+                break;
+            case "2":
+                status = campusplan.domain.EventStatus.SCHEDULED;
+                break;
+            case "3":
+                status = campusplan.domain.EventStatus.CANCELLED;
+                break;
+            default:
+                System.out.println("Invalid status choice.");
+                return;
+        }
+        java.util.List<Event> events = eventRosterService.listByStatus(status);
+        System.out.println("\n=== Events with status " + status + " ===");
+        if (events.isEmpty()) {
+            System.out.println("No events found.");
+            return;
+        }
+        for (Event event : events) {
+            printEventSummary(event);
+        }
+    }
+
+    private void showEventDetail() {
+        System.out.print("Enter event ID: ");
+        String id = scanner.nextLine().trim();
+        try {
+            Event event = eventRosterService.get(id);
+            displayEvent(event);
+            // also print responses
+            System.out.println("Responses:");
+            if (event.getResponses().isEmpty()) {
+                System.out.println("  (none)");
+            } else {
+                event.getResponses().forEach((sid, resp) -> System.out.println("  " + sid + " -> " + resp));
+            }
+        } catch (CampusPlanException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void exportRosterCsv() {
+        System.out.print("Enter event ID: ");
+        String id = scanner.nextLine().trim();
+        try {
+            String csv = eventRosterService.exportRosterCsv(id);
+            System.out.println("\n--- CSV Roster (copy or redirect to file) ---");
+            System.out.print(csv);
+            System.out.println("--- End of CSV ---");
+        } catch (CampusPlanException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    /** Prints a compact one-line summary of an event. */
+    private void printEventSummary(Event event) {
+        String slot = event.getSlot() == null ? "not scheduled"
+                : event.getSlot().getDate() + " "
+                        + event.getSlot().getStart() + "-" + event.getSlot().getEnd();
+        System.out.printf("  [%s] %s | %s | %s%n",
+                event.getId(),
+                event.getTitle(),
+                event.getStatus(),
+                slot);
     }
 
     // ==================== SAVE ====================
