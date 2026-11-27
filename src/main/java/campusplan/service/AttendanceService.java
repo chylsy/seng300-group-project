@@ -2,17 +2,25 @@ package campusplan.service;
 
 import campusplan.domain.CampusPlanData;
 import campusplan.domain.Event;
+import campusplan.domain.EventStatus;
+import campusplan.domain.StudentAvailability;
+import campusplan.domain.TimeInterval;
+import campusplan.error.NotFoundException;
+import campusplan.error.ValidationException;
+
+import java.util.Map;
+import java.util.Objects;
 
 public class AttendanceService {
 
     private final CampusPlanData data;
 
     public AttendanceService(CampusPlanData data) {
-        this.data = data;
+        this.data = Objects.requireNonNull(data, "data");
     }
 
     /**
-     * Record a response for a student.
+     * Records a response for an invited student.
      */
     public void recordResponse(
             String eventId,
@@ -21,90 +29,131 @@ public class AttendanceService {
 
         Event event = getEvent(eventId);
 
-        // verify student is invited
+        if (!event.getInviteeIds().contains(studentId)) {
+            throw new NotFoundException("Student", studentId);
+        }
 
-        // verify response is valid
+        validateResponse(response);
 
-        // if ACCEPTED:
-        //     check availability
-        //     check for overlapping accepted events
+        if (Event.ACCEPTED.equals(response)) {
+            validateAcceptedResponse(event, studentId);
+        }
 
-        // save response
+        event.getResponses().put(studentId, response);
     }
 
     /**
-     * Return all responses for an event.
+     * Returns all responses for an event.
      */
-    public Object getResponses(String eventId) {
-        Event event = getEvent(eventId);
-
-        // return response collection
-        return null;
+    public Map<String, String> getResponses(String eventId) {
+        return getEvent(eventId).getResponses();
     }
 
     /**
-     * Count accepted responses.
+     * Counts ACCEPTED responses.
      */
     public int acceptedCount(String eventId) {
 
-        Event event = getEvent(eventId);
+        int count = 0;
 
-        // count ACCEPTED responses
+        for (String response : getResponses(eventId).values()) {
 
-        return 0;
+            if (Event.ACCEPTED.equals(response)) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
-    /**
-     * Find an event or throw an exception.
-     */
     private Event getEvent(String eventId) {
 
-        // look up event
+        Event event = data.getEvents().get(eventId);
 
-        return null;
+        if (event == null) {
+            throw new NotFoundException("Event", eventId);
+        }
+
+        return event;
     }
 
-    /**
-     * Verify response is one of:
-     * PENDING, ACCEPTED, DECLINED
-     */
     private void validateResponse(String response) {
 
-        // validate response value
+        boolean valid =
+                Event.PENDING.equals(response)
+                        || Event.ACCEPTED.equals(response)
+                        || Event.DECLINED.equals(response);
+
+        if (!valid) {
+            throw new ValidationException(
+                    "response",
+                    "Response must be PENDING, ACCEPTED or DECLINED");
+        }
     }
 
-    /**
-     * ACCEPTED-specific validation.
-     */
     private void validateAcceptedResponse(
             Event event,
             String studentId) {
 
-        // verify event is scheduled
+        if (event.getStatus() != EventStatus.SCHEDULED) {
 
-        // verify availability
+            throw new ValidationException(
+                    "status",
+                    "Only scheduled events can be accepted");
+        }
 
-        // verify no conflicts
+        TimeInterval slot = event.getSlot();
+
+        validateAvailability(studentId, slot);
+
+        validateNoConflict(event, studentId, slot);
     }
 
-    /**
-     * Check student's availability.
-     */
     private void validateAvailability(
             String studentId,
-            Object slot) {
+            TimeInterval slot) {
 
-        // availability logic
+        StudentAvailability saved =
+                data.getAvailability().get(studentId);
+
+        if (saved == null || !saved.covers(slot)) {
+
+            throw new ValidationException(
+                    "response",
+                    "Student is not available for this event");
+        }
     }
 
-    /**
-     * Check overlapping accepted events.
-     */
     private void validateNoConflict(
-            Event event,
+            Event currentEvent,
             String studentId,
-            Object slot) {
+            TimeInterval slot) {
 
-        // conflict logic
+        for (Event other : data.getEvents().values()) {
+
+            if (other == currentEvent) {
+                continue;
+            }
+
+            boolean scheduled =
+                    other.getStatus() == EventStatus.SCHEDULED;
+
+            boolean invited =
+                    other.getInviteeIds().contains(studentId);
+
+            boolean accepted =
+                    invited
+                            && Event.ACCEPTED.equals(
+                            other.responseOf(studentId));
+
+            if (scheduled
+                    && accepted
+                    && slot.overlaps(other.getSlot())) {
+
+                throw new ValidationException(
+                        "response",
+                        "Student already accepted an overlapping event");
+            }
+        }
     }
 }
