@@ -47,6 +47,9 @@
 ### Resolved defects
 
 - TODO: list your defects here
+- Fixed CLI startup so the app loads saved data, offers seed data when empty, saves from the menu and on exit, and shows errors instead of crashing. Added a run command to the README. ([PR #29](https://github.com/chylsy/seng300-group-project/pull/29))
+- Rewrote README with build, run, data file, seed data, and reset/backup steps. ([PR #31](https://github.com/chylsy/seng300-group-project/pull/31))
+- Added FR-02 interval validation: availability must be on 30-minute boundaries, within 08:00–22:00, on one date, with start before end. Unknown students now raise NotFoundException. Added tests for each rule. ([PR #41](https://github.com/chylsy/seng300-group-project/pull/41))
 - Corrected `traceability.csv` rows that pointed to tests that did not exist, and updated the issue numbers for the Room and FR-04 rows.
 - Added traceability mappings for FR-06 acceptance criteria and automated tests.
 - Corrected attendance validation so unavailable students cannot ACCEPT scheduled events.

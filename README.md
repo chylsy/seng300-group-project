@@ -65,6 +65,8 @@ Answer **y** to load the sample students, rooms, availability and events. Seed d
 
 `sample-data/no-suggestions.json` is an additional dataset for testing the no-suggestion case.
 
+`sample-data/p2-baseline.json` is a larger dataset for demonstrating P2 features.
+
 ## Reset and Backup
 
 - **Back up:** copy `data/campusplan.json` somewhere safe.
@@ -77,6 +79,7 @@ Answer **y** to load the sample students, rooms, availability and events. Seed d
 src/main/java/campusplan/
 ├── Main/          Command-line interface (entry point: Main)
 ├── service/       Application services (students, rooms, availability, events, storage)
+├── command/       Undo/redo history (Command pattern)
 ├── domain/        Domain model and business rules
 ├── persistence/   DataStore interface, JSON and in-memory implementations
 └── error/         CampusPlanException and its subclasses
@@ -98,6 +101,9 @@ Dependencies point downward: the CLI calls services, services use the domain mod
 
 - Scheduling suggestions (FR-04) are available from **4. Manage draft events → 5. Get scheduling suggestions**.
 - Confirm/cancel (FR-05) is available from **4. Manage draft events → 6. Confirm event** and **7. Cancel event**.
-- Attendance responses (FR-06), event listing and roster export (FR-07) and undo/redo (FR-08) are in progress.
+- Attendance responses (FR-06) are available from **4. Manage draft events → 8. Record attendance response** and **9. View attendance responses**.
+- Undo/redo (FR-08) is available from the main menu with **u** (undo) and **r** (redo). Confirm, cancel and attendance responses are not yet undoable.
+- Editing availability does not yet check for existing ACCEPTED responses.
+- Event listing and roster CSV export (FR-07) are in progress.
 - Data is only saved when the user chooses to save.
 - The command-line interface is English only.
