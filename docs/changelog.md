@@ -30,6 +30,7 @@
 - Added the matching FR-04 rows to `traceability.csv`. ([#42](https://github.com/chylsy/seng300-group-project/commit/4348dd5095dd7cd53db8c3327f24ede24ad470d4))
 
 
+
 ### Design changes
 
 - Added the `EligibilityRule` interface (`ineligibleReason(Event, String, TimeInterval)`), so suggestion logic does not depend on the concrete rule and can be tested with a stub. 
