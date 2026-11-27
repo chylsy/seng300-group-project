@@ -52,3 +52,4 @@
 - Corrected attendance validation so unavailable students cannot ACCEPT scheduled events.
 - Corrected attendance conflict handling so overlapping accepted commitments are rejected.
 - Corrected attendance commitment handling so PENDING and DECLINED responses release previously accepted reservations.
+- Added FR-01,FR-02,FR-03 to requirements.pdf which were missing from P1
