@@ -9,7 +9,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
-
+import campusplan.command.CommandHistory;
 import campusplan.domain.CampusPlanData;
 import campusplan.domain.Event;
 import campusplan.domain.EventDraftRequest;
@@ -17,29 +17,33 @@ import campusplan.domain.IdGenerator;
 import campusplan.domain.Room;
 import campusplan.domain.RoomFeature;
 import campusplan.domain.Student;
+import campusplan.domain.Suggestion;
+import campusplan.domain.SuggestionResult;
 import campusplan.domain.TimeInterval;
 import campusplan.domain.UuidIdGenerator;
 import campusplan.error.CampusPlanException;
 import campusplan.error.DuplicateEmailException;
 import campusplan.error.NotFoundException;
+import campusplan.error.ValidationException;
 import campusplan.persistence.JsonDataStore;
+import campusplan.service.AvailabilityEligibilityRule;
 import campusplan.service.AvailabilityService;
 import campusplan.service.EventPlanningService;
 import campusplan.service.RoomCatalogService;
+import campusplan.service.SchedulingService;
 import campusplan.service.StorageService;
 import campusplan.service.StudentService;
-import campusplan.domain.Suggestion;
-import campusplan.domain.SuggestionResult;
-import campusplan.service.SchedulingService;
-import campusplan.service.AvailabilityEligibilityRule;
+import campusplan.service.AttendanceService;
 
 public class Main {
+    private final CommandHistory history;
     private final Scanner scanner;
     private final StudentService studentService;
     private final RoomCatalogService roomCatalogService;
     private final AvailabilityService availabilityService;
     private final EventPlanningService eventPlanningService;
     private final SchedulingService schedulingService;
+    private final AttendanceService attendanceService;
 
 
     /** Where the app's data is saved between runs (as per FR-03) */
@@ -51,6 +55,7 @@ public class Main {
     private final StorageService storage;
 
     public Main(CampusPlanData data, IdGenerator ids, StorageService storage) {
+        history = new CommandHistory(data);
         scanner              = new Scanner(System.in);
         this.storage         = storage;
         studentService       = new StudentService(data, ids);
@@ -58,6 +63,7 @@ public class Main {
         availabilityService  = new AvailabilityService(data);
         eventPlanningService = new EventPlanningService(data);
         schedulingService = new SchedulingService(data, new AvailabilityEligibilityRule(data));
+        attendanceService = new AttendanceService(data);
     }
 
     public static void main(String[] args) {
@@ -103,7 +109,7 @@ public class Main {
         }
     }
 
-        public void run() {
+    public void run() {
         boolean running = true;
 
         while (running) {
@@ -129,6 +135,12 @@ public class Main {
                     case "5":
                         saveData();
                         break;
+                    case "u":
+                        System.out.println(history.undo() ? "Change undone." : "Nothing to undo.");
+                        break;
+                    case "r":
+                        System.out.println(history.redo() ? "Change reapplied." : "Nothing to redo.");
+                        break;
                     case "0":
                         running = false;
                         offerSaveOnExit();
@@ -151,6 +163,8 @@ public class Main {
         System.out.println("3. Manage availability");
         System.out.println("4. Manage draft events");
         System.out.println("5. Save data");
+        System.out.println("u. Undo last change");
+        System.out.println("r. Redo last undone change");
         System.out.println("0. Exit");
     }
 
@@ -204,7 +218,7 @@ public class Main {
             System.out.print("Enter student email: ");
             String email = scanner.nextLine();
 
-            Student student = studentService.create(name, email);
+            Student student = history.run("Create student", () -> studentService.create(name, email));
 
             System.out.println("Student created successfully:");
             System.out.println(student);
@@ -257,7 +271,7 @@ public class Main {
             System.out.print("Enter new email: ");
             String email = scanner.nextLine();
 
-            Student student = studentService.edit(id, name, email);
+            Student student = history.run("Edit student", () -> studentService.edit(id, name, email));
 
             System.out.println("Student updated successfully:");
             System.out.println(student);
@@ -421,10 +435,10 @@ public class Main {
             studentService.get(studentId);
             TimeInterval interval = readTimeInterval();
 
-            availabilityService.addAvailability(studentId, interval);
+            history.run("Add availability", () -> availabilityService.addAvailability(studentId, interval));
 
             System.out.println("Availability added successfully.");
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {            
             System.out.println("Could not add availability: " + e.getMessage());
         }
     }
@@ -437,10 +451,10 @@ public class Main {
             studentService.get(studentId);
             TimeInterval interval = readTimeInterval();
 
-            availabilityService.removeAvailability(studentId, interval);
+            history.run("Remove availability", () -> availabilityService.removeAvailability(studentId, interval));
 
             System.out.println("Availability removed successfully.");
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {            
             System.out.println("Could not remove availability: " + e.getMessage());
         }
     }
@@ -461,7 +475,7 @@ public class Main {
             } else {
                 System.out.println("The student is not available for this interval.");
             }
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {
             System.out.println("Could not check availability: " + e.getMessage());
         }
     }
@@ -504,6 +518,10 @@ public class Main {
             System.out.println("3. Find event by ID");
             System.out.println("4. Edit draft event");
             System.out.println("5. Get scheduling suggestions");
+            System.out.println("6. Confirm event (choose room and time)");
+            System.out.println("7. Cancel event");
+            System.out.println("8. Record attendance response");
+            System.out.println("9. View responses");
             System.out.println("0. Back to main menu");
             System.out.print("Select an option: ");
 
@@ -525,6 +543,19 @@ public class Main {
                 case "5":
                     showSuggestions();
                     break;
+                case "6":
+                    confirmEvent();
+                    break;
+                case "7":
+                    cancelEvent();
+                    break;
+                case "8":
+                    recordResponse();
+                    break;
+
+                case "9":
+                    viewResponses();
+                    break;
                 case "0":
                     managing = false;
                     break;
@@ -537,7 +568,7 @@ public class Main {
     private void createDraftEvent() {
         try {
             EventDraftRequest request = readEventDraftRequest();
-            Event event = eventPlanningService.createDraft(request);
+            Event event = history.run("Create draft", () -> eventPlanningService.createDraft(request));
 
             System.out.println("Draft event created successfully:");
             displayEvent(event);
@@ -584,7 +615,7 @@ public class Main {
             System.out.println("\nEnter the updated event details.");
 
             EventDraftRequest request = readEventDraftRequest();
-            Event updatedEvent = eventPlanningService.editDraft(id, request);
+            Event updatedEvent = history.run("Edit draft", () -> eventPlanningService.editDraft(id, request));
 
             System.out.println("Draft event updated successfully:");
             displayEvent(updatedEvent);
@@ -642,6 +673,99 @@ public class Main {
             names.add(describeStudent(studentId));
         }
         return String.join(", ", names);
+    }
+
+    private void confirmEvent() {
+        System.out.print("Enter the ID of the event to confirm: ");
+        String id = scanner.nextLine().trim();
+
+        System.out.print("Enter the room ID: ");
+        String roomId = scanner.nextLine().trim();
+
+        try {
+            TimeInterval slot = readTimeInterval();
+            Event event = eventPlanningService.confirm(id, roomId, slot);
+
+            System.out.println("Event confirmed:");
+            displayEvent(event);
+        } catch (RuntimeException e) {
+            System.out.println("Could not confirm event: " + e.getMessage());
+        }
+    }
+
+    private void cancelEvent() {
+        System.out.print("Enter the ID of the event to cancel: ");
+        String id = scanner.nextLine().trim();
+
+        try {
+            System.out.print("Cancel this event? (y/n): ");
+            boolean confirmed = scanner.nextLine().trim().equalsIgnoreCase("y");
+
+            Event event = eventPlanningService.cancel(id,confirmed);
+
+            System.out.println("Event cancelled:");
+            displayEvent(event);
+        } catch (RuntimeException e) {
+            System.out.println("Could not cancel event: " + e.getMessage());
+        }
+    }
+    private void recordResponse() {
+
+        try {
+
+            System.out.print("Event ID: ");
+            String eventId = scanner.nextLine().trim();
+
+            System.out.print("Student ID: ");
+            String studentId = scanner.nextLine().trim();
+
+            System.out.print(
+                    "Response (PENDING, ACCEPTED, DECLINED): ");
+
+            String response =
+                    scanner.nextLine().trim().toUpperCase();
+
+            attendanceService.recordResponse(
+                    eventId,
+                    studentId,
+                    response);
+
+            System.out.println(
+                    "Response recorded successfully.");
+
+        } catch (RuntimeException e) {
+            System.out.println(
+                    "Could not record response: "
+                            + e.getMessage());
+        }
+    }
+
+    private void viewResponses() {
+
+        System.out.print("Event ID: ");
+        String eventId = scanner.nextLine().trim();
+
+        try {
+
+            Event event =
+                    eventPlanningService.get(eventId);
+
+            System.out.println(
+                    "\nResponses for "
+                            + event.getTitle());
+
+            event.getResponses().forEach(
+                    (studentId, response) ->
+                            System.out.println(
+                                    describeStudent(studentId)
+                                            + ": "
+                                            + response));
+
+        } catch (RuntimeException e) {
+            System.out.println(
+                    "Could not view responses: "
+                            + e.getMessage());
+        }
     }
 
     private EventDraftRequest readEventDraftRequest() {
