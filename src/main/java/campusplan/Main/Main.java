@@ -9,7 +9,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
-
+import campusplan.command.CommandHistory;
 import campusplan.domain.CampusPlanData;
 import campusplan.domain.Event;
 import campusplan.domain.EventDraftRequest;
@@ -34,6 +34,7 @@ import campusplan.service.SchedulingService;
 import campusplan.service.AvailabilityEligibilityRule;
 
 public class Main {
+    private final CommandHistory history;
     private final Scanner scanner;
     private final StudentService studentService;
     private final RoomCatalogService roomCatalogService;
@@ -51,6 +52,7 @@ public class Main {
     private final StorageService storage;
 
     public Main(CampusPlanData data, IdGenerator ids, StorageService storage) {
+        history = new CommandHistory(data);
         scanner              = new Scanner(System.in);
         this.storage         = storage;
         studentService       = new StudentService(data, ids);
@@ -129,6 +131,12 @@ public class Main {
                     case "5":
                         saveData();
                         break;
+                    case "u":
+                        System.out.println(history.undo() ? "Change undone." : "Nothing to undo.");
+                        break;
+                    case "r":
+                        System.out.println(history.redo() ? "Change reapplied." : "Nothing to redo.");
+                        break;
                     case "0":
                         running = false;
                         offerSaveOnExit();
@@ -151,6 +159,8 @@ public class Main {
         System.out.println("3. Manage availability");
         System.out.println("4. Manage draft events");
         System.out.println("5. Save data");
+        System.out.println("u. Undo last change");
+        System.out.println("r. Redo last undone change");
         System.out.println("0. Exit");
     }
 
@@ -204,7 +214,7 @@ public class Main {
             System.out.print("Enter student email: ");
             String email = scanner.nextLine();
 
-            Student student = studentService.create(name, email);
+            Student student = history.run("Create student", () -> studentService.create(name, email));
 
             System.out.println("Student created successfully:");
             System.out.println(student);
@@ -257,7 +267,7 @@ public class Main {
             System.out.print("Enter new email: ");
             String email = scanner.nextLine();
 
-            Student student = studentService.edit(id, name, email);
+            Student student = history.run("Edit student", () -> studentService.edit(id, name, email));
 
             System.out.println("Student updated successfully:");
             System.out.println(student);
@@ -421,7 +431,7 @@ public class Main {
             studentService.get(studentId);
             TimeInterval interval = readTimeInterval();
 
-            availabilityService.addAvailability(studentId, interval);
+            history.run("Add availability", () -> availabilityService.addAvailability(studentId, interval));
 
             System.out.println("Availability added successfully.");
         } catch (IllegalArgumentException | NotFoundException e) {
@@ -437,7 +447,7 @@ public class Main {
             studentService.get(studentId);
             TimeInterval interval = readTimeInterval();
 
-            availabilityService.removeAvailability(studentId, interval);
+            history.run("Remove availability", () -> availabilityService.removeAvailability(studentId, interval));
 
             System.out.println("Availability removed successfully.");
         } catch (IllegalArgumentException | NotFoundException e) {
@@ -537,7 +547,7 @@ public class Main {
     private void createDraftEvent() {
         try {
             EventDraftRequest request = readEventDraftRequest();
-            Event event = eventPlanningService.createDraft(request);
+            Event event = history.run("Create draft", () -> eventPlanningService.createDraft(request));
 
             System.out.println("Draft event created successfully:");
             displayEvent(event);
@@ -584,7 +594,7 @@ public class Main {
             System.out.println("\nEnter the updated event details.");
 
             EventDraftRequest request = readEventDraftRequest();
-            Event updatedEvent = eventPlanningService.editDraft(id, request);
+            Event updatedEvent = history.run("Edit draft", () -> eventPlanningService.editDraft(id, request));
 
             System.out.println("Draft event updated successfully:");
             displayEvent(updatedEvent);
