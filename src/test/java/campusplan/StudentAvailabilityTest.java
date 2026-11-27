@@ -3,10 +3,10 @@ package campusplan;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 import campusplan.domain.StudentAvailability;
 import campusplan.domain.TimeInterval;
@@ -155,4 +155,37 @@ public class StudentAvailabilityTest {
             date, LocalTime.of(11, 0), LocalTime.of(13, 0)
         )));
     }
+
+    @Test
+    public void isAvailableWhenIntervalIsEncompassed() {
+
+        StudentAvailability availability = new StudentAvailability("S001");
+        LocalDate date = LocalDate.of(2026, 10, 26);
+
+        /* Student is available from 9:00AM - 5:00PM */
+        availability.add(new TimeInterval(
+            date, LocalTime.of(9, 0), LocalTime.of(17, 0)
+        ));
+
+        /* Case 1: Slot sits fully inside the availability (TRUE) */
+        assertTrue(availability.covers(new TimeInterval(
+            date, LocalTime.of(11, 0), LocalTime.of(13, 0)
+        )));
+
+        /* Case 2: Slot matches the availability exactly (TRUE) */
+        assertTrue(availability.covers(new TimeInterval(
+            date, LocalTime.of(9, 0), LocalTime.of(17, 0)
+        )));
+
+        /* Case 3: Slot starts before the availability (FALSE) */
+        assertFalse(availability.covers(new TimeInterval(
+            date, LocalTime.of(8, 30), LocalTime.of(10, 0)
+        )));
+
+        /* Case 4: Same times but on a different date (FALSE) */
+        assertFalse(availability.covers(new TimeInterval(
+            date.plusDays(1), LocalTime.of(11, 0), LocalTime.of(13, 0)
+        )));
+    }
+
 }

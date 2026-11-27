@@ -17,21 +17,22 @@ import campusplan.domain.IdGenerator;
 import campusplan.domain.Room;
 import campusplan.domain.RoomFeature;
 import campusplan.domain.Student;
+import campusplan.domain.Suggestion;
+import campusplan.domain.SuggestionResult;
 import campusplan.domain.TimeInterval;
 import campusplan.domain.UuidIdGenerator;
 import campusplan.error.CampusPlanException;
 import campusplan.error.DuplicateEmailException;
 import campusplan.error.NotFoundException;
+import campusplan.error.ValidationException;
 import campusplan.persistence.JsonDataStore;
+import campusplan.service.AvailabilityEligibilityRule;
 import campusplan.service.AvailabilityService;
 import campusplan.service.EventPlanningService;
 import campusplan.service.RoomCatalogService;
+import campusplan.service.SchedulingService;
 import campusplan.service.StorageService;
 import campusplan.service.StudentService;
-import campusplan.domain.Suggestion;
-import campusplan.domain.SuggestionResult;
-import campusplan.service.SchedulingService;
-import campusplan.service.AvailabilityEligibilityRule;
 
 public class Main {
     private final Scanner scanner;
@@ -103,7 +104,7 @@ public class Main {
         }
     }
 
-        public void run() {
+    public void run() {
         boolean running = true;
 
         while (running) {
@@ -424,7 +425,7 @@ public class Main {
             availabilityService.addAvailability(studentId, interval);
 
             System.out.println("Availability added successfully.");
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {            
             System.out.println("Could not add availability: " + e.getMessage());
         }
     }
@@ -440,7 +441,7 @@ public class Main {
             availabilityService.removeAvailability(studentId, interval);
 
             System.out.println("Availability removed successfully.");
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {            
             System.out.println("Could not remove availability: " + e.getMessage());
         }
     }
@@ -461,7 +462,7 @@ public class Main {
             } else {
                 System.out.println("The student is not available for this interval.");
             }
-        } catch (IllegalArgumentException | NotFoundException e) {
+        } catch (IllegalArgumentException | NotFoundException | ValidationException e) {
             System.out.println("Could not check availability: " + e.getMessage());
         }
     }

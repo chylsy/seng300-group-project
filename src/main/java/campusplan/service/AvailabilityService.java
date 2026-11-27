@@ -1,7 +1,11 @@
 package campusplan.service;
 
-import campusplan.domain.*;
-import java.util.*;
+import java.util.Objects;
+
+import campusplan.domain.CampusPlanData;
+import campusplan.domain.StudentAvailability;
+import campusplan.domain.TimeInterval;
+import campusplan.error.NotFoundException;
 
 public class AvailabilityService {
 
@@ -43,9 +47,7 @@ public class AvailabilityService {
         StudentAvailability availability = data.getStudentAvailability(studentId);
 
         if (availability == null) {
-            throw new IllegalArgumentException(
-                "Availability not found for student: " + studentId
-            );
+            throw new NotFoundException("Availability", studentId);
         }
 
         return availability;

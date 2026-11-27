@@ -18,6 +18,22 @@ public class TimeInterval {
      */
     public TimeInterval(LocalDate date, LocalTime start, LocalTime end) {
 
+        Validation.require(date != null, "date", "Date is required.");
+        Validation.require(start != null, "start", "Start time is required.");
+        Validation.require(end != null, "end", "End time is required.");
+
+        /* Times must sit on 30-minute boundaries (e.g. 10:00 or 10:30, not 10:15) */
+        Validation.onHalfHour(start);
+        Validation.onHalfHour(end);
+
+        /* An interval covers part of one day, so start must come before end */
+        Validation.require(start.isBefore(end), "end",
+            "Start time must be before end time.");
+
+        /* Must fall within opening hours, 08:00-22:00 */
+        Validation.require(!start.isBefore(Room.OPEN) && !end.isAfter(Room.CLOSE), "time",
+            "Interval must be within opening hours " + Room.OPEN + "-" + Room.CLOSE + ".");
+
         this.date   = date;
         this.start  = start;
         this.end    = end;
