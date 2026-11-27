@@ -360,53 +360,59 @@ public final class JsonDataStore implements DataStore {
     }
 
     private void deserializeEvents(JsonArray rows, CampusPlanData data) {
-        // Safe deserialization using reflection if Event classes exist on runtime classpath
         for (JsonElement row : rows) {
             JsonObject o = object(row, "event");
             String eventId = id(o);
-            try {
-                Class<?> reqClass = Class.forName("campusplan.domain.EventDraftRequest");
-                Class<?> eventClass = Class.forName("campusplan.domain.Event");
 
-                String title = text(o, "title");
-                List<String> inviteeIds = new ArrayList<>();
-                for (JsonElement v : array(o, "inviteeIds")) {
-                    inviteeIds.add(Validation.requireText(v.getAsString(), 1, 100, "inviteeId"));
-                }
-                LocalDate ws = LocalDate.parse(text(o, "windowStart"));
-                LocalDate we = LocalDate.parse(text(o, "windowEnd"));
-                int duration = integer(o, "durationMinutes");
-                Set<RoomFeature> reqFeat = features(o);
-                int minAtt = integer(o, "minAttendance");
-
-                Object req = reqClass.getConstructor(
-                        String.class, List.class, LocalDate.class, LocalDate.class, int.class, Set.class, int.class
-                ).newInstance(title, inviteeIds, ws, we, duration, reqFeat, minAtt);
-
-                Object event = eventClass.getConstructor(String.class, reqClass).newInstance(eventId, req);
-
-                @SuppressWarnings("unchecked")
-                Map<String, String> responses = (Map<String, String>) eventClass.getMethod("getResponses").invoke(event);
-                if (responses != null) {
-                    responses.clear();
-                    if (o.has("responses") && o.get("responses").isJsonObject()) {
-                        for (Map.Entry<String, JsonElement> entry : o.getAsJsonObject("responses").entrySet()) {
-                            responses.put(entry.getKey(), entry.getValue().getAsString());
-                        }
-                    }
-                }
-
-                @SuppressWarnings("unchecked")
-                Map<String, Object> eventMap = (Map<String, Object>) (Map<?, ?>) data.getEvents();
-                if (eventMap != null) {
-                    eventMap.put(eventId, event);
-                }
-            } catch (ClassNotFoundException e) {
-                // Event domain classes not yet integrated in this branch
-                break;
-            } catch (ReflectiveOperationException e) {
-                throw new CorruptDataException(file, "Failed to instantiate event: " + e.getMessage(), e);
+            List<String> invitees = new ArrayList<>();
+            for (JsonElement value : array(o, "inviteeIds")) {
+                invitees.add(string(value, "inviteeId"));
             }
+
+            Event event = new Event(eventId, new EventDraftRequest(
+                    text(o, "title"),
+                    invitees,
+                    LocalDate.parse(text(o, "windowStart")),
+                    LocalDate.parse(text(o, "windowEnd")),
+                    integer(o, "durationMinutes"),
+                    features(o),
+                    integer(o, "minAttendance")
+            ));
+
+            EventStatus status = o.has("status")
+                    ? EventStatus.valueOf(text(o, "status"))
+                    : EventStatus.DRAFT;
+
+            if (status == EventStatus.SCHEDULED) {
+                JsonObject slot = object(required(o, "slot"), "slot");
+                String roomId = text(o, "roomId");
+                Validation.require(data.getRooms().containsKey(roomId),
+                        "roomId", "Unknown scheduled room.");
+
+                event.schedule(roomId, new TimeInterval(
+                        LocalDate.parse(text(slot, "date")),
+                        LocalTime.parse(text(slot, "start")),
+                        LocalTime.parse(text(slot, "end"))
+                ));
+            } 
+            else if (status == EventStatus.CANCELLED) {
+                event.cancel();
+            }
+
+            if (o.has("responses")) {
+                for (var entry : object(o.get("responses"), "responses").entrySet()) {
+                    String response = string(entry.getValue(), "response");
+                    Validation.require(
+                            invitees.contains(entry.getKey())
+                                    && Set.of(Event.PENDING, Event.ACCEPTED, Event.DECLINED).contains(response),
+                            "responses", "Unknown invitee or invalid response."
+                    );
+                    event.getResponses().put(entry.getKey(), response);
+                }
+            }
+
+            Validation.require(data.getEvents().putIfAbsent(eventId, event) == null,
+                    "id", "Duplicate event ID.");
         }
     }
 

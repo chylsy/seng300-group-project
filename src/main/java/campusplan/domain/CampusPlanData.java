@@ -49,6 +49,20 @@ public final class CampusPlanData {
         events.forEach((id, e) -> copy.events.put(id, new Event(e)));
         return copy;
     }
+    public void restoreFrom(CampusPlanData source) {
+        CampusPlanData copy = source.deepCopy();
+
+        students.clear();
+        rooms.clear();
+        availability.clear();
+        events.clear();
+
+        students.putAll(copy.students);
+        rooms.putAll(copy.rooms);
+        availability.putAll(copy.availability);
+        events.putAll(copy.events);
+    }
+    
 
 
     public void loadSeedIfEmpty(CampusPlanData source) {
