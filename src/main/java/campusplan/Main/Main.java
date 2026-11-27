@@ -33,6 +33,7 @@ import campusplan.service.RoomCatalogService;
 import campusplan.service.SchedulingService;
 import campusplan.service.StorageService;
 import campusplan.service.StudentService;
+import campusplan.service.AttendanceService;
 
 public class Main {
     private final CommandHistory history;
@@ -42,6 +43,7 @@ public class Main {
     private final AvailabilityService availabilityService;
     private final EventPlanningService eventPlanningService;
     private final SchedulingService schedulingService;
+    private final AttendanceService attendanceService;
 
 
     /** Where the app's data is saved between runs (as per FR-03) */
@@ -61,6 +63,7 @@ public class Main {
         availabilityService  = new AvailabilityService(data);
         eventPlanningService = new EventPlanningService(data);
         schedulingService = new SchedulingService(data, new AvailabilityEligibilityRule(data));
+        attendanceService = new AttendanceService(data);
     }
 
     public static void main(String[] args) {
@@ -517,6 +520,8 @@ public class Main {
             System.out.println("5. Get scheduling suggestions");
             System.out.println("6. Confirm event (choose room and time)");
             System.out.println("7. Cancel event");
+            System.out.println("8. Record attendance response");
+            System.out.println("9. View responses");
             System.out.println("0. Back to main menu");
             System.out.print("Select an option: ");
 
@@ -543,6 +548,13 @@ public class Main {
                     break;
                 case "7":
                     cancelEvent();
+                    break;
+                case "8":
+                    recordResponse();
+                    break;
+
+                case "9":
+                    viewResponses();
                     break;
                 case "0":
                     managing = false;
@@ -695,6 +707,64 @@ public class Main {
             displayEvent(event);
         } catch (RuntimeException e) {
             System.out.println("Could not cancel event: " + e.getMessage());
+        }
+    }
+    private void recordResponse() {
+
+        try {
+
+            System.out.print("Event ID: ");
+            String eventId = scanner.nextLine().trim();
+
+            System.out.print("Student ID: ");
+            String studentId = scanner.nextLine().trim();
+
+            System.out.print(
+                    "Response (PENDING, ACCEPTED, DECLINED): ");
+
+            String response =
+                    scanner.nextLine().trim().toUpperCase();
+
+            attendanceService.recordResponse(
+                    eventId,
+                    studentId,
+                    response);
+
+            System.out.println(
+                    "Response recorded successfully.");
+
+        } catch (RuntimeException e) {
+            System.out.println(
+                    "Could not record response: "
+                            + e.getMessage());
+        }
+    }
+
+    private void viewResponses() {
+
+        System.out.print("Event ID: ");
+        String eventId = scanner.nextLine().trim();
+
+        try {
+
+            Event event =
+                    eventPlanningService.get(eventId);
+
+            System.out.println(
+                    "\nResponses for "
+                            + event.getTitle());
+
+            event.getResponses().forEach(
+                    (studentId, response) ->
+                            System.out.println(
+                                    describeStudent(studentId)
+                                            + ": "
+                                            + response));
+
+        } catch (RuntimeException e) {
+            System.out.println(
+                    "Could not view responses: "
+                            + e.getMessage());
         }
     }
 
