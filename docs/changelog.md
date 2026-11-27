@@ -66,3 +66,16 @@
 - Corrected attendance commitment handling so PENDING and DECLINED responses release previously accepted reservations.
 - Added FR-01,FR-02,FR-03 to requirements.pdf which were missing from P1
 - Fixed JSON loading so saved events retain their status, room, time slot, and attendance responses after restarting.
+
+
+## Project Milestone 1:
+
+### Delivered features
+
+**FR-03: Persistence and storage** (Favour)
+- Added `DataStore` interface (`exists()`, `load()`, `save()`) to decouple persistence from domain and service logic. ([#5](https://github.com/chylsy/seng300-group-project/issues/5))
+- Added `JsonDataStore` for UTF-8 JSON persistence of students, rooms, availability, and events, with `schemaVersion` validation, duplicate-ID detection, and atomic temp-file writes (`ATOMIC_MOVE` with `REPLACE_EXISTING` fallback) so failed saves never corrupt existing files. ([#5](https://github.com/chylsy/seng300-group-project/issues/5))
+- Added `InMemoryDataStore` using deep-copy snapshots for isolated unit testing without disk I/O. ([#5](https://github.com/chylsy/seng300-group-project/issues/5))
+- Added `StorageService` coordinating application startup (`startApp()`), saving (`save()`), and seed loading (`loadSeed()`) into empty datasets. ([#5](https://github.com/chylsy/seng300-group-project/issues/5))
+- Added `CorruptDataException` to report malformed JSON, missing/unsupported schema versions, and invalid stored references without overwriting valid data. ([#5](https://github.com/chylsy/seng300-group-project/issues/5))
+- Added `PersistenceAndStorageTest` with 13 automated unit and integration tests covering `InMemoryDataStore`, `JsonDataStore`, `StorageService`, corrupt data handling, and seed loading. ([#5](https://github.com/chylsy/seng300-group-project/issues/5))
